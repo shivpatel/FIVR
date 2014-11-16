@@ -26,10 +26,8 @@ public class ServiceHandler implements Runnable {
 
 					if (ServerCaptain.initializeState == true) {
 						// do initialization for server
-						System.out.println("Server is ready. (A)");
 						socket = new DatagramSocket(ServerCaptain.serverPort);
 						logOutput = "Server is ready...\n";
-						System.out.println("Server is ready. (B)");
 						ServerCaptain.initializeState = false;
 					} else {
 						// continue normal operation
