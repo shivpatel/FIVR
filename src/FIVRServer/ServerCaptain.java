@@ -2,11 +2,11 @@ package FIVRServer;
 
 public class ServerCaptain {
 
-	public static boolean started = false;
-	public static boolean initializeState = false;
-	public static boolean enableLog = false;
-	public static int serverPort;
-	public static int windowSize;
+	public static volatile boolean started = false;
+	public static volatile boolean initializeState = false;
+	public static volatile boolean enableLog = false;
+	public static volatile int serverPort;
+	public static volatile int windowSize;
 
 	public static void main(String[] args) {
 
