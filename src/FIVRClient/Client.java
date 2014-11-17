@@ -26,8 +26,8 @@ public class Client {
 		System.out.println(" ");
 		System.out.println("Available Commands:");
 		System.out.println("> connect [address] [port]");
-		System.out.println("> get-file [file]");
-		System.out.println("> post-file [file]");
+		System.out.println("> getfile [file]");
+		System.out.println("> postfile [file]");
 		System.out.println("> disconnect");
 		System.out.println(" ");
 
