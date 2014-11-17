@@ -10,7 +10,7 @@ import FIVRModules.*;
 
 public class Client {
 
-	public static int PACKETSIZE = 800000;
+	public static int PACKETSIZE = 200;
 	public static DatagramSocket socket = null;
 	public static InetAddress host;
 	public static int port;
@@ -112,6 +112,7 @@ public class Client {
 			FIVRFile file = new FIVRFile(filename);
 			DatagramPacket packet = new DatagramPacket(file.getData(),
 					file.getData().length, host, port);
+			byte[] fileNameBytes = filename.getBytes();
 			socket.send(packet);
 			socket.setSoTimeout(2000);
 			// empty out packet, for response

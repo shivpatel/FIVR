@@ -4,10 +4,12 @@ import java.io.*;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 
+import FIVRModules.*;
+
 public class ServiceHandler implements Runnable {
 
 	public static String name;
-	public static int PACKETSIZE = 800000;
+	public static int PACKETSIZE = 200;
 	public static DatagramSocket socket;
 	public static String logOutput;
 
@@ -41,6 +43,9 @@ public class ServiceHandler implements Runnable {
 						logOutput = "Received from " + packet.getAddress()
 								+ ":" + packet.getPort() + ", data: "
 								+ new String(packet.getData());
+						
+						// save file to current directory
+						FIVRFile toSave = new FIVRFile(packet.getData());
 
 						// create response and send back to client here
 						socket.send(packet); // response
