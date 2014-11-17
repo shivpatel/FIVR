@@ -6,9 +6,11 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.util.Scanner;
 
+import FIVRModules.*;
+
 public class Client {
 
-	public static int PACKETSIZE = 100;
+	public static int PACKETSIZE = 800000;
 	public static DatagramSocket socket = null;
 	public static InetAddress host;
 	public static int port;
@@ -42,10 +44,10 @@ public class Client {
 				// disconnect request
 				disconnect();
 			} else if (command.length == 2) {
-				if (command[0].equalsIgnoreCase("get-file")) {
+				if (command[0].equalsIgnoreCase("getfile")) {
 					// download file from server
 					getFile(command[1]);
-				} else if (command[0].equalsIgnoreCase("post-file")) {
+				} else if (command[0].equalsIgnoreCase("postfile")) {
 					// upload file to server
 					postFile(command[1]);
 				}
@@ -90,14 +92,8 @@ public class Client {
 	 */
 	public static boolean getFile(String file) {
 		try {
-			byte[] data = file.getBytes();
-			DatagramPacket packet = new DatagramPacket(data, data.length, host,
-					port);
-			socket.send(packet);
-			socket.setSoTimeout(2000);
-			packet.setData(new byte[PACKETSIZE]);
-			socket.receive(packet);
-			System.out.println(new String(packet.getData()));
+			// request file from DB
+			// response should be file
 		} catch (Exception e) {
 			System.out.println("Error getting file: " + e);
 		}
@@ -105,17 +101,29 @@ public class Client {
 	}
 
 	/**
-	 * Attempt to uplaod file to remote server
+	 * Attempt to upload file to remote server
 	 * 
 	 * @param file
 	 *            name of file to upload
 	 * @return
 	 */
-	public static boolean postFile(String file) {
-		File transferFile = new File(file);
-		byte[] bytes = new byte[(int) transferFile.length()];
-		// send bytes array from above
-		return false;
+	public static boolean postFile(String filename) {
+		try {
+			FIVRFile file = new FIVRFile(filename);
+			DatagramPacket packet = new DatagramPacket(file.getData(),
+					file.getData().length, host, port);
+			socket.send(packet);
+			socket.setSoTimeout(2000);
+			// empty out packet, for response
+			packet.setData(new byte[PACKETSIZE]);
+			socket.receive(packet);
+			System.out.println("Server Response: "
+					+ new String(packet.getData()));
+			return true;
+		} catch (Exception e) {
+			System.out.println("Failed to send file. Error: " + e.getMessage());
+			return false;
+		}
 	}
 
 }

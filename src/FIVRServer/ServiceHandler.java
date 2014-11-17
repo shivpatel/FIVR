@@ -7,7 +7,7 @@ import java.net.DatagramSocket;
 public class ServiceHandler implements Runnable {
 
 	public static String name;
-	public static int PACKETSIZE = 100;
+	public static int PACKETSIZE = 800000;
 	public static DatagramSocket socket;
 	public static String logOutput;
 
