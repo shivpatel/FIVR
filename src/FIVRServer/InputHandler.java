@@ -2,11 +2,11 @@ package FIVRServer;
 
 import java.util.*;
 
-public class InputStreamer implements Runnable {
+public class InputHandler implements Runnable {
 
 	String name;
 
-	public InputStreamer(String x) {
+	public InputHandler(String x) {
 		name = x;
 	}
 
@@ -35,19 +35,19 @@ public class InputStreamer implements Runnable {
 			// COMMAND > start [port]
 			if (args[0].equalsIgnoreCase("start") && args.length >= 2) {
 				try {
-					ServerCaptain.serverPort = Integer.parseInt(args[1]);
+					Server.serverPort = Integer.parseInt(args[1]);
 				} catch (NumberFormatException e) {
 					System.out.println("Invalid arguments");
 				}
-				ServerCaptain.initializeState = true;
-				ServerCaptain.started = true;
+				Server.initializeState = true;
+				Server.started = true;
 				return;
 			}
 
 			// COMMAND > window [size]
 			if (args[0].equalsIgnoreCase("window") && args.length >= 2) {
 				try {
-					ServerCaptain.windowSize = Integer.parseInt(args[1]);
+					Server.windowSize = Integer.parseInt(args[1]);
 				} catch (NumberFormatException e) {
 					System.out.println("Invalid arguments");
 				}
@@ -57,7 +57,7 @@ public class InputStreamer implements Runnable {
 			// COMMAND > debug [true/false]
 			if (args[0].equalsIgnoreCase("debug") && args.length >= 2) {
 				try {
-					ServerCaptain.enableLog = Boolean.parseBoolean(args[1]);
+					Server.enableLog = Boolean.parseBoolean(args[1]);
 				} catch (Exception e) {
 					System.out.println("Invalid arguments");
 				}
@@ -66,7 +66,7 @@ public class InputStreamer implements Runnable {
 
 			// COMMAND > stop
 			if (args[0].equalsIgnoreCase("stop")) {
-				ServerCaptain.started = false;
+				Server.started = false;
 				// stop the server
 				return;
 			}

@@ -6,10 +6,10 @@ import java.net.DatagramSocket;
 
 public class ServiceHandler implements Runnable {
 
-	String name;
-	int PACKETSIZE = 30;
-	DatagramSocket socket;
-	String logOutput;
+	public static String name;
+	public static int PACKETSIZE = 100;
+	public static DatagramSocket socket;
+	public static String logOutput;
 
 	public ServiceHandler(String x) {
 		name = x;
@@ -22,13 +22,13 @@ public class ServiceHandler implements Runnable {
 
 				logOutput = "";
 
-				if (ServerCaptain.started == true) {
+				if (Server.started == true) {
 
-					if (ServerCaptain.initializeState == true) {
+					if (Server.initializeState == true) {
 						// do initialization for server
-						socket = new DatagramSocket(ServerCaptain.serverPort);
-						logOutput = "Server is ready...\n";
-						ServerCaptain.initializeState = false;
+						socket = new DatagramSocket(Server.serverPort);
+						logOutput = "Server is ready...";
+						Server.initializeState = false;
 					} else {
 						// continue normal operation
 						DatagramPacket packet = new DatagramPacket(
@@ -38,9 +38,9 @@ public class ServiceHandler implements Runnable {
 						// do stuff with packet here
 
 						// log stuff here if needed
-						logOutput = packet.getAddress() + " "
-								+ packet.getPort() + ": "
-								+ new String(packet.getData()) + "\n";
+						logOutput = "Received from " + packet.getAddress()
+								+ ":" + packet.getPort() + ", data: "
+								+ new String(packet.getData());
 
 						// create response and send back to client here
 						socket.send(packet); // response
