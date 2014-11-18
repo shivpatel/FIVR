@@ -6,6 +6,11 @@ import java.net.DatagramSocket;
 
 import FIVRModules.*;
 
+/**
+ * 
+ * @author shiv
+ *
+ */
 public class ServiceHandler implements Runnable {
 
 	public static String name;
