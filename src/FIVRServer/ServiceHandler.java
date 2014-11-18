@@ -43,7 +43,7 @@ public class ServiceHandler implements Runnable {
 						logOutput = "Received from " + packet.getAddress()
 								+ ":" + packet.getPort() + ", data: "
 								+ new String(packet.getData());
-						
+
 						// save file to current directory
 						FIVRFile toSave = new FIVRFile(packet.getData());
 

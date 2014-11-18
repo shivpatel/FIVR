@@ -68,7 +68,7 @@ public class Client {
 		try {
 			host = InetAddress.getByName(ip);
 			port = Integer.parseInt(prt);
-			socket = new DatagramSocket();
+			socket = new DatagramSocket(Integer.parseInt(prt) - 1);
 			System.out.println("Connected to server!");
 		} catch (Exception e) {
 			System.out.println("Error connecting: " + e);
@@ -112,14 +112,13 @@ public class Client {
 			FIVRFile file = new FIVRFile(filename);
 			DatagramPacket packet = new DatagramPacket(file.getData(),
 					file.getData().length, host, port);
-			byte[] fileNameBytes = filename.getBytes();
 			socket.send(packet);
 			socket.setSoTimeout(2000);
 			// empty out packet, for response
 			packet.setData(new byte[PACKETSIZE]);
 			socket.receive(packet);
-			System.out.println("Server Response: "
-					+ new String(packet.getData()));
+			// System.out.println("Server Response: "
+			// + new String(packet.getData()));
 			return true;
 		} catch (Exception e) {
 			System.out.println("Failed to send file. Error: " + e.getMessage());
