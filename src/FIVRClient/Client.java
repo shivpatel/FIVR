@@ -100,7 +100,7 @@ public class Client {
 	}
 	
 	public static void connect() {
-		// do connection packet BS here
+		// do handshake here
 	}
 	
 	public static void changeWindow(String size) {
@@ -150,7 +150,7 @@ public class Client {
 
 			DatagramPacket packet = null;
 			int i = 0;
-			int tmpPacketSeqStartPoint = PACKET_SEQUENCE_NUM;
+			int thisSetSeqStartNum = PACKET_SEQUENCE_NUM;
 			PACKET_SEQUENCE_NUM += packetsToSend.size();
 			
 			while(i < packetsToSend.size()) {
@@ -179,9 +179,12 @@ public class Client {
 					// 	if ACK reset i to appropriate packet to resend from
 					// update window size, etc.
 				} catch (SocketTimeoutException e) {
-					// response timed out
-					// reset i to beginning
-					// update window size, etc.
+					// ACK/NACK Response Timed Out
+					// Reset i to start of set
+					i = i + 1 - WINDOW_SIZE;
+					// update window size and threshold
+					WINDOW_THRESHOLD = 25;
+					WINDOW_SIZE = 5;
 				}
 				
 			}
