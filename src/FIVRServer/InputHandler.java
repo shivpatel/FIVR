@@ -33,7 +33,7 @@ public class InputHandler implements Runnable {
 
 		if (args.length > 0) {
 			// COMMAND > start [port]
-			if (args[0].equalsIgnoreCase("start") && args.length >= 3) {
+			if (args[0].equalsIgnoreCase("fta-server") && args.length >= 3) {
 				try {
 					Server.serverPort = Integer.parseInt(args[1]);
 					Server.emulatorPort = Integer.parseInt(args[2]);
@@ -66,7 +66,7 @@ public class InputHandler implements Runnable {
 			}
 
 			// COMMAND > stop
-			if (args[0].equalsIgnoreCase("stop")) {
+			if (args[0].equalsIgnoreCase("terminate")) {
 				Server.started = false;
 				// stop the server
 				return;

@@ -15,8 +15,8 @@ public class Server {
 		System.out.println("*** FIVR Server ***");
 		System.out.println(" ");
 		System.out.println("Available Commands:");
-		System.out.println("> start [server port] [emulator port]");
-		System.out.println("> stop");
+		System.out.println("> fta-server [FTA Port] [Emulator Address] [Emulator Port]");
+		System.out.println("> terminate");
 		System.out.println("> window [size]");
 		System.out.println("> debug [true/false]");
 		System.out.println(" ");

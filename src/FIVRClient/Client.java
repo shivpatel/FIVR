@@ -36,9 +36,11 @@ public class Client {
 		System.out.println(" ");
 		System.out.println("Available Commands:");
 		System.out
-				.println("> connect [server port] [emulator address] [emulator port]");
-		System.out.println("> getfile [file]");
-		System.out.println("> postfile [file]");
+				.println("> fta-client [client port] [emulator address] [emulator port]");
+		System.out.println("> connect");
+		System.out.println("> get [file]");
+		System.out.println("> post [file]");
+		System.out.println("> window [size]");
 		System.out.println("> disconnect");
 		System.out.println(" ");
 
@@ -47,20 +49,27 @@ public class Client {
 		while (true) {
 			System.out.println("Please enter a command:");
 			String[] command = scanner.nextLine().split(" ");
-			if (command.length == 4 && command[0].equalsIgnoreCase("connect")) {
+			if (command.length == 4 && command[0].equalsIgnoreCase("fta-client")) {
 				// connect request
-				connect(command[1], command[2], command[3]);
+				ftaClient(command[1], command[2], command[3]);
 			} else if (command.length == 1
 					&& command[0].equalsIgnoreCase("disconnect")) {
 				// disconnect request
 				disconnect();
+			} else if (command.length == 1
+					&& command[0].equalsIgnoreCase("connect")) {
+				// disconnect request
+				connect();
 			} else if (command.length == 2) {
-				if (command[0].equalsIgnoreCase("getfile")) {
+				if (command[0].equalsIgnoreCase("get")) {
 					// download file from server
 					getFile(command[1]);
-				} else if (command[0].equalsIgnoreCase("postfile")) {
+				} else if (command[0].equalsIgnoreCase("post")) {
 					// upload file to server
 					postFile(command[1]);
+				} else if (command[0].equalsIgnoreCase("window")) {
+					// upload file to server
+					changeWindow(command[1]);
 				}
 			}
 		}
@@ -75,19 +84,27 @@ public class Client {
 	 * @param prt
 	 *            port of remote server
 	 */
-	public static void connect(String srvPrt, String ip, String prt) {
+	public static void ftaClient(String clntPrt, String ip, String prt) {
 		try {
 			host = InetAddress.getByName(ip);
 			port = Integer.parseInt(prt);
 
-			port = Integer.parseInt(srvPrt); // comment out if using emulator
+			port = Integer.parseInt(clntPrt); // comment out if using emulator
 
-			clientPort = Integer.parseInt(srvPrt) - 1;
+			clientPort = Integer.parseInt(clntPrt);
 			socket = new DatagramSocket(clientPort);
 			System.out.println("Connected to server!");
 		} catch (Exception e) {
 			System.out.println("Error connecting: " + e);
 		}
+	}
+	
+	public static void connect() {
+		// do connection packet BS here
+	}
+	
+	public static void changeWindow(String size) {
+		return;
 	}
 
 	/**
@@ -130,11 +147,11 @@ public class Client {
 					filename, (short) clientPort, (short) port,
 					PACKET_SEQUENCE_NUM, PACKET_SIZE, WINDOW_SIZE, WINDOW_SIZE,
 					false);
-			
-			PACKET_SEQUENCE_NUM += packetsToSend.size();
 
 			DatagramPacket packet = null;
 			int i = 0;
+			int tmpPacketSeqStartPoint = PACKET_SEQUENCE_NUM;
+			PACKET_SEQUENCE_NUM += packetsToSend.size();
 			
 			while(i < packetsToSend.size()) {
 				
@@ -146,9 +163,9 @@ public class Client {
 						socket.send(packet);
 						i++;
 					} catch (Exception e) {
-						// not enough packets left to fill up window size
-						// just don't do anything :D
-						// NOTE: SERVER must be capable of detecting end bracket packet
+						// All Good!
+						// Window Size > Packets to Send
+						// Server should detect "end bracket" packet
 					}
 				}
 				
