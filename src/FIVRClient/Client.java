@@ -150,10 +150,23 @@ public class Client {
 
 			DatagramPacket packet = null;
 			int i = 0;
-			int thisSetSeqStartNum = PACKET_SEQUENCE_NUM;
+			int tmpSetSeqStartNum = PACKET_SEQUENCE_NUM;
+			int attempts = 0;
 			PACKET_SEQUENCE_NUM += packetsToSend.size();
 			
+			// TEST
+			System.out.println("Number of packets: " + packetsToSend.size());
+			for (int k = 0; k < packetsToSend.size(); k++) {
+				System.out.println("DATA:" + new String(packetsToSend.get(k).payload));
+			}
+			// END TEST
+			
 			while(i < packetsToSend.size()) {
+								
+				if (attempts > 10) {
+					System.out.println("Failed to send file too many times.");
+					return false;
+				}
 				
 				for (int j = 0; j < WINDOW_SIZE; j++) {
 					try {
@@ -163,26 +176,36 @@ public class Client {
 						socket.send(packet);
 						i++;
 					} catch (Exception e) {
-						// All Good!
+						System.out.println("Got this exception." + e.getMessage());
 						// Window Size > Packets to Send
 						// Server should detect "end bracket" packet
 					}
 				}
 				
 				socket.setSoTimeout(RTT_TIMEOUT);
-				packet.setData(new byte[100]);
+				packet = new DatagramPacket(new byte[24],
+						24, host, port);
 				
 				try {
 					socket.receive(packet);
-					// analyze response packet here
-					// 	if NACK reset i to appropriate packet to resend from
-					// 	if ACK reset i to appropriate packet to resend from
-					// update window size, etc.
+					FIVRPacket responseFIVRPacket = FIVRPacketManager.depacketize(packet);
+					// if got NACK or ACK is not for desired sequence number
+					if (responseFIVRPacket.header.isNACK || responseFIVRPacket.header.ack != (i + tmpSetSeqStartNum)) {
+						i = i - WINDOW_SIZE;
+						WINDOW_THRESHOLD = (WINDOW_THRESHOLD / 2) + 1;
+						WINDOW_SIZE = WINDOW_THRESHOLD;
+					} else {
+						// i stays the same
+						if (WINDOW_SIZE < WINDOW_THRESHOLD) {
+							WINDOW_SIZE = (WINDOW_SIZE * WINDOW_SIZE) / 2; 
+						} else {
+							WINDOW_SIZE++;
+						}
+					}
 				} catch (SocketTimeoutException e) {
 					// ACK/NACK Response Timed Out
-					// Reset i to start of set
-					i = i + 1 - WINDOW_SIZE;
-					// update window size and threshold
+					attempts++;
+					i = i - WINDOW_SIZE; // reset i to start of set
 					WINDOW_THRESHOLD = 25;
 					WINDOW_SIZE = 5;
 				}
@@ -192,6 +215,7 @@ public class Client {
 			return true;
 		} catch (Exception e) {
 			System.out.println("Failed to send file. Error: " + e.getMessage());
+			e.printStackTrace();
 			return false;
 		}
 	}

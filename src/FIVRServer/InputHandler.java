@@ -36,7 +36,7 @@ public class InputHandler implements Runnable {
 			if (args[0].equalsIgnoreCase("fta-server") && args.length >= 3) {
 				try {
 					Server.serverPort = Integer.parseInt(args[1]);
-					Server.emulatorPort = Integer.parseInt(args[2]);
+					Server.emulatorPort = Integer.parseInt(args[3]);
 				} catch (NumberFormatException e) {
 					System.out.println("Invalid arguments");
 				}
