@@ -1,14 +1,17 @@
 package FIVRModules;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.net.DatagramPacket;
 import java.util.ArrayList;
 
 /**
  *Takes input file and creates an array of packets from it to be sent via FIVR Protocol
  */
-public class FIVRPacketizer 
+public class FIVRPacketManager 
 {
 
 	/**
@@ -53,7 +56,6 @@ public class FIVRPacketizer
 		{
 			FIVRHeader currentHeader = new FIVRHeader(sourcePort, destinationPort, seqNum, -1, -1, window, false, false, false, false, false, packetsForNextSet, isDownload, true, false);
 			FIVRPacket currentPacket = new FIVRPacket(currentHeader, null);
-			currentPacket.header.checksum = FIVRChecksum.generateChecksum(currentPacket.getBytes());
 			seqNum += 1;
 			
 			int payloadSize = segmentSize - FIVRHeader.HEADER_SIZE;
@@ -73,6 +75,7 @@ public class FIVRPacketizer
 			bufferOffset += payloadSize;
 			
 			currentPacket.payload = payload;
+			currentPacket.header.checksum = FIVRChecksum.generateChecksum(currentPacket.getBytes());
 			
 			packets.add(currentPacket);
 		}
@@ -88,8 +91,35 @@ public class FIVRPacketizer
 		return packets;
 	}
 	
-	public static FIVRPacket generatePacket()
+	/**
+	 * Extracts data from UDP DatagramPacket into a FIVRPacket
+	 * @param datagram UDP datagram containing the FIVRPacket in its payload
+	 * @return FIVRPacket contained in UDP the DatagramPacket
+	 * @throws IOException
+	 * @throws ClassNotFoundException
+	 */
+	public static FIVRPacket depacketize(DatagramPacket datagram) throws IOException, ClassNotFoundException
 	{
-		return null;
+        FIVRPacket fivrPacket = null;
+        ByteArrayInputStream bis = null;
+        ObjectInputStream ois = null;
+        try 
+        {
+            bis = new ByteArrayInputStream(datagram.getData());
+            ois = new ObjectInputStream(bis);
+            fivrPacket = (FIVRPacket) ois.readObject();
+        } 
+        finally 
+        {
+            if (bis != null) 
+            {
+                bis.close();
+            }
+            if (ois != null) 
+            {
+                ois.close();
+            }
+        }
+        return fivrPacket;
 	}
 }

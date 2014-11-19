@@ -143,7 +143,7 @@ public class Client {
 		try {
 			System.out.println("Sending file to at " + host + ":" + port);
 
-			ArrayList<FIVRPacket> packetsToSend = FIVRPacketizer.packetize(
+			ArrayList<FIVRPacket> packetsToSend = FIVRPacketManager.packetize(
 					filename, (short) clientPort, (short) port,
 					PACKET_SEQUENCE_NUM, PACKET_SIZE, WINDOW_SIZE, WINDOW_SIZE,
 					false);
