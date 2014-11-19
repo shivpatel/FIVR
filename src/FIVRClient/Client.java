@@ -49,7 +49,8 @@ public class Client {
 		while (true) {
 			System.out.println("Please enter a command:");
 			String[] command = scanner.nextLine().split(" ");
-			if (command.length == 4 && command[0].equalsIgnoreCase("fta-client")) {
+			if (command.length == 4
+					&& command[0].equalsIgnoreCase("fta-client")) {
 				// connect request
 				ftaClient(command[1], command[2], command[3]);
 			} else if (command.length == 1
@@ -98,11 +99,11 @@ public class Client {
 			System.out.println("Error connecting: " + e);
 		}
 	}
-	
+
 	public static void connect() {
 		// do handshake here
 	}
-	
+
 	public static void changeWindow(String size) {
 		return;
 	}
@@ -124,8 +125,8 @@ public class Client {
 	 */
 	public static boolean getFile(String file) {
 		try {
-			// request file from DB
-			// response should be file
+			byte[] data = file.getBytes();
+			FIVRHeader header = new FIVRHeader();
 		} catch (Exception e) {
 			System.out.println("Error getting file: " + e);
 		}
@@ -153,65 +154,66 @@ public class Client {
 			int tmpSetSeqStartNum = PACKET_SEQUENCE_NUM;
 			int attempts = 0;
 			PACKET_SEQUENCE_NUM += packetsToSend.size();
-			
-			// TEST
-			System.out.println("Number of packets: " + packetsToSend.size());
-			for (int k = 0; k < packetsToSend.size(); k++) {
-				System.out.println("DATA:" + new String(packetsToSend.get(k).payload));
-			}
-			// END TEST
-			
-			while(i < packetsToSend.size()) {
-								
+
+			while (i < packetsToSend.size()) {
+
 				if (attempts > 10) {
 					System.out.println("Failed to send file too many times.");
 					return false;
 				}
-				
+
 				for (int j = 0; j < WINDOW_SIZE; j++) {
 					try {
 						FIVRPacket cur = packetsToSend.get(i);
-						packet = new DatagramPacket(cur.payload,
-								cur.payload.length, host, port);
+						packet = new DatagramPacket(cur.getBytes(),
+								cur.getBytes().length, host, port);
 						socket.send(packet);
+						System.out.println("Sent packet #" + i);
 						i++;
 					} catch (Exception e) {
-						System.out.println("Got this exception." + e.getMessage());
+						System.out.println("Error sending package: "
+								+ e.getMessage());
 						// Window Size > Packets to Send
 						// Server should detect "end bracket" packet
 					}
 				}
-				
+
 				socket.setSoTimeout(RTT_TIMEOUT);
-				packet = new DatagramPacket(new byte[24],
-						24, host, port);
-				
+				packet = new DatagramPacket(new byte[100], 100, host, port);
+
 				try {
 					socket.receive(packet);
-					FIVRPacket responseFIVRPacket = FIVRPacketManager.depacketize(packet);
+					FIVRPacket responseFIVRPacket = FIVRPacketManager
+							.depacketize(packet);
 					// if got NACK or ACK is not for desired sequence number
-					if (responseFIVRPacket.header.isNACK || responseFIVRPacket.header.ack != (i + tmpSetSeqStartNum)) {
+					if (responseFIVRPacket.header.isNACK
+							|| responseFIVRPacket.header.ack != (i + tmpSetSeqStartNum)) {
 						i = i - WINDOW_SIZE;
 						WINDOW_THRESHOLD = (WINDOW_THRESHOLD / 2) + 1;
 						WINDOW_SIZE = WINDOW_THRESHOLD;
 					} else {
 						// i stays the same
 						if (WINDOW_SIZE < WINDOW_THRESHOLD) {
-							WINDOW_SIZE = (WINDOW_SIZE * WINDOW_SIZE) / 2; 
+							WINDOW_SIZE = (WINDOW_SIZE * WINDOW_SIZE) / 2;
 						} else {
 							WINDOW_SIZE++;
 						}
 					}
-				} catch (SocketTimeoutException e) {
-					// ACK/NACK Response Timed Out
+				} catch (SocketTimeoutException e) { // ACK/NACK Response Timed
+														// Out
+					attempts++;
+					i = i - WINDOW_SIZE; // reset i to start of set
+					WINDOW_THRESHOLD = 25;
+					WINDOW_SIZE = 5;
+				} catch (EOFException e) { // Null Received in Response
 					attempts++;
 					i = i - WINDOW_SIZE; // reset i to start of set
 					WINDOW_THRESHOLD = 25;
 					WINDOW_SIZE = 5;
 				}
-				
+
 			}
-			
+
 			return true;
 		} catch (Exception e) {
 			System.out.println("Failed to send file. Error: " + e.getMessage());
