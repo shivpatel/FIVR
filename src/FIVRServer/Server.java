@@ -6,6 +6,7 @@ public class Server {
 	public static volatile boolean initializeState = false;
 	public static volatile boolean enableLog = false;
 	public static volatile int serverPort;
+	public static volatile int emulatorPort;
 	public static volatile int windowSize;
 
 	public static void main(String[] args) {
@@ -14,7 +15,7 @@ public class Server {
 		System.out.println("*** FIVR Server ***");
 		System.out.println(" ");
 		System.out.println("Available Commands:");
-		System.out.println("> start [port]");
+		System.out.println("> start [server port] [emulator port]");
 		System.out.println("> stop");
 		System.out.println("> window [size]");
 		System.out.println("> debug [true/false]");

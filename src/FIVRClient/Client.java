@@ -4,16 +4,26 @@ import java.io.*;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.SocketTimeoutException;
+import java.util.ArrayList;
 import java.util.Scanner;
 
 import FIVRModules.*;
 
 public class Client {
 
-	public static int PACKETSIZE = 200;
 	public static DatagramSocket socket = null;
 	public static InetAddress host;
 	public static int port;
+	public static int clientPort;
+
+	public static int WINDOW_THRESHOLD = 25; // 25 max
+	public static int WINDOW_SIZE = 5; // 5 packets per window
+	public static int PACKET_SIZE = 200; // 200 bytes
+	public static int BUFFER_SIZE = 1000; // 1000 bytes
+	public static int RTT_TIMEOUT = 2000; // 2 sec.
+	public static int CONNECTION_TIMEOUT = 30000; // 30 sec.
+	public static int PACKET_SEQUENCE_NUM = 0;
 
 	/**
 	 * Get user commands
@@ -25,7 +35,8 @@ public class Client {
 		System.out.println("*** FIVR Client ***");
 		System.out.println(" ");
 		System.out.println("Available Commands:");
-		System.out.println("> connect [address] [port]");
+		System.out
+				.println("> connect [server port] [emulator address] [emulator port]");
 		System.out.println("> getfile [file]");
 		System.out.println("> postfile [file]");
 		System.out.println("> disconnect");
@@ -36,9 +47,9 @@ public class Client {
 		while (true) {
 			System.out.println("Please enter a command:");
 			String[] command = scanner.nextLine().split(" ");
-			if (command.length == 3 && command[0].equalsIgnoreCase("connect")) {
+			if (command.length == 4 && command[0].equalsIgnoreCase("connect")) {
 				// connect request
-				connect(command[1], command[2]);
+				connect(command[1], command[2], command[3]);
 			} else if (command.length == 1
 					&& command[0].equalsIgnoreCase("disconnect")) {
 				// disconnect request
@@ -64,11 +75,15 @@ public class Client {
 	 * @param prt
 	 *            port of remote server
 	 */
-	public static void connect(String ip, String prt) {
+	public static void connect(String srvPrt, String ip, String prt) {
 		try {
 			host = InetAddress.getByName(ip);
 			port = Integer.parseInt(prt);
-			socket = new DatagramSocket(Integer.parseInt(prt) - 1);
+
+			port = Integer.parseInt(srvPrt); // comment out if using emulator
+
+			clientPort = Integer.parseInt(srvPrt) - 1;
+			socket = new DatagramSocket(clientPort);
 			System.out.println("Connected to server!");
 		} catch (Exception e) {
 			System.out.println("Error connecting: " + e);
@@ -109,16 +124,51 @@ public class Client {
 	 */
 	public static boolean postFile(String filename) {
 		try {
-			FIVRFile file = new FIVRFile(filename);
-			DatagramPacket packet = new DatagramPacket(file.getData(),
-					file.getData().length, host, port);
-			socket.send(packet);
-			socket.setSoTimeout(2000);
-			// empty out packet, for response
-			packet.setData(new byte[PACKETSIZE]);
-			socket.receive(packet);
-			// System.out.println("Server Response: "
-			// + new String(packet.getData()));
+			System.out.println("Sending file to at " + host + ":" + port);
+
+			ArrayList<FIVRPacket> packetsToSend = FIVRPacketizer.packetize(
+					filename, (short) clientPort, (short) port,
+					PACKET_SEQUENCE_NUM, PACKET_SIZE, WINDOW_SIZE, WINDOW_SIZE,
+					false);
+			
+			PACKET_SEQUENCE_NUM += packetsToSend.size();
+
+			DatagramPacket packet = null;
+			int i = 0;
+			
+			while(i < packetsToSend.size()) {
+				
+				for (int j = 0; j < WINDOW_SIZE; j++) {
+					try {
+						FIVRPacket cur = packetsToSend.get(i);
+						packet = new DatagramPacket(cur.payload,
+								cur.payload.length, host, port);
+						socket.send(packet);
+						i++;
+					} catch (Exception e) {
+						// not enough packets left to fill up window size
+						// just don't do anything :D
+						// NOTE: SERVER must be capable of detecting end bracket packet
+					}
+				}
+				
+				socket.setSoTimeout(RTT_TIMEOUT);
+				packet.setData(new byte[100]);
+				
+				try {
+					socket.receive(packet);
+					// analyze response packet here
+					// 	if NACK reset i to appropriate packet to resend from
+					// 	if ACK reset i to appropriate packet to resend from
+					// update window size, etc.
+				} catch (SocketTimeoutException e) {
+					// response timed out
+					// reset i to beginning
+					// update window size, etc.
+				}
+				
+			}
+			
 			return true;
 		} catch (Exception e) {
 			System.out.println("Failed to send file. Error: " + e.getMessage());

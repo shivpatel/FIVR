@@ -33,9 +33,10 @@ public class InputHandler implements Runnable {
 
 		if (args.length > 0) {
 			// COMMAND > start [port]
-			if (args[0].equalsIgnoreCase("start") && args.length >= 2) {
+			if (args[0].equalsIgnoreCase("start") && args.length >= 3) {
 				try {
 					Server.serverPort = Integer.parseInt(args[1]);
+					Server.emulatorPort = Integer.parseInt(args[2]);
 				} catch (NumberFormatException e) {
 					System.out.println("Invalid arguments");
 				}
