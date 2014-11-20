@@ -55,8 +55,7 @@ public class ServiceHandler implements Runnable {
 							System.out
 									.println("Connection request packet arrived.");
 							handleConnectRequset(pkt, packet);
-						} else if (pkt.header.isDownload == 1
-								&& pkt.header.fileOpenBracket == 1) {
+						} else if (pkt.header.isDownload == 1) {
 							System.out
 									.println("Download file packet request arrived.");
 							handleDownloadRequset(pkt, packet);
@@ -194,7 +193,8 @@ public class ServiceHandler implements Runnable {
 	}
 
 	public void handleDownloadRequset(FIVRPacket packet, DatagramPacket datagram) {
-
+		String filename = new String(packet.payload);
+		System.out.println("Request to download " + filename);
 	}
 
 }

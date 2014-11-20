@@ -236,20 +236,18 @@ public class Client {
 					host, port);
 			socket.send(packet);
 
-			socket.setSoTimeout(RTT_TIMEOUT);
-			packet = new DatagramPacket(new byte[PACKET_SIZE], PACKET_SIZE, host, port);
-			FIVRPacket response = null;
+//			socket.setSoTimeout(RTT_TIMEOUT);
+//			packet = new DatagramPacket(new byte[PACKET_SIZE], PACKET_SIZE, host, port);
+//			FIVRPacket response = null;
 
-			while (response.header.fileClosingBracket == 0) {
-				socket.receive(packet);
-				response = FIVRPacketManager.depacketize(packet);
+//			while (response.header.fileClosingBracket == 0) {
+//				socket.receive(packet);
+//				response = FIVRPacketManager.depacketize(packet);
+//
+//				ArrayList<FIVRPacket> packetCollection = new ArrayList<FIVRPacket>();
+//				packetCollection.add(response);
+//			}
 
-				ArrayList<FIVRPacket> packetCollection = new ArrayList<FIVRPacket>();
-				packetCollection.add(response);
-			}
-
-			// while (haven't received end bracket packet)
-			// load all incoming packets into buffer and store together
 		} catch (Exception e) {
 			System.out.println("Could not get that file. Error: " + e);
 		}
