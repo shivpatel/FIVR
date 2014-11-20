@@ -64,6 +64,11 @@ public class FIVRHeader implements Serializable
 		this.fileClosingBracket = fileClosingBracket;
 	}
 	
+	public FIVRHeader()
+	{
+		
+	}
+	
 	/** Generates array of bytes from this FIVRHeader object
 	 * 
 	 * @return

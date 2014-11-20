@@ -25,7 +25,7 @@ public class Test
 			{
 				fullBytes[i] = 0;
 			}
-		}
+		} 
 		
 		DatagramPacket packet = new DatagramPacket(fullBytes, fullBytes.length);
 		

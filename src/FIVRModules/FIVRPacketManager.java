@@ -122,7 +122,7 @@ public class FIVRPacketManager
         } 
         finally
         {
-            if (bis != null) 
+            if (bis != null)
             {
                 bis.close();
             }
