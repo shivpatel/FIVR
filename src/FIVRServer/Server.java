@@ -1,5 +1,7 @@
 package FIVRServer;
 
+import java.net.InetAddress;
+
 public class Server {
 
 	public static volatile boolean started = false;
@@ -7,6 +9,7 @@ public class Server {
 	public static volatile boolean enableLog = false;
 	public static volatile int serverPort;
 	public static volatile int emulatorPort;
+	public static volatile InetAddress host;
 	public static volatile int windowSize;
 
 	public static void main(String[] args) {

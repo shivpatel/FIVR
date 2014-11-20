@@ -16,10 +16,11 @@ public class Client {
 	public static InetAddress host;
 	public static int port;
 	public static int clientPort;
+	public static boolean connected = false;
 
 	public static int WINDOW_THRESHOLD = 25; // 25 max
 	public static int WINDOW_SIZE = 5; // 5 packets per window
-	public static int PACKET_SIZE = 200; // 200 bytes
+	public static int PACKET_SIZE = 512; // 512 bytes
 	public static int BUFFER_SIZE = 1000; // 1000 bytes
 	public static int RTT_TIMEOUT = 2000; // 2 sec.
 	public static int CONNECTION_TIMEOUT = 30000; // 30 sec.
@@ -90,28 +91,121 @@ public class Client {
 			host = InetAddress.getByName(ip);
 			port = Integer.parseInt(prt);
 
-			port = Integer.parseInt(clntPrt); // comment out if using emulator
+			port = Integer.parseInt(clntPrt) + 1; // comment out if using emulator
 
 			clientPort = Integer.parseInt(clntPrt);
 			socket = new DatagramSocket(clientPort);
-			System.out.println("Connected to server!");
+			System.out.println("Remote host settings add. Type connect to establish a connection.");
 		} catch (Exception e) {
 			System.out.println("Error connecting: " + e);
 		}
 	}
 
 	public static void connect() {
-		// do handshake here
+		if (connected) {
+			System.out.println("Already connected to server " + host + ":" + port);
+			return;
+		}
+		try {
+			// 1. client request to connect with server
+			FIVRHeader header = new FIVRHeader(clientPort, port,
+					PACKET_SEQUENCE_NUM, -1, -1, WINDOW_SIZE, true, false,
+					false, false, false, WINDOW_SIZE, false, false, false);
+			PACKET_SEQUENCE_NUM++;
+			FIVRPacket requestPacket = new FIVRPacket(header, new byte[0]);
+			DatagramPacket packet = new DatagramPacket(
+					requestPacket.getBytes(), requestPacket.getBytes().length,
+					host, port);
+			socket.send(packet);
+
+			// 2. client waits for server to respond
+			socket.setSoTimeout(RTT_TIMEOUT);
+			packet = new DatagramPacket(new byte[PACKET_SIZE], PACKET_SIZE, host, port);
+			FIVRPacket response = null;
+
+			boolean gotResponse = false;
+			int tries = 0;
+
+			while (!gotResponse) {
+				try {
+					if (tries > 10) {
+						System.out.println("Tried to connect to server, but no luck.");
+						return;
+					}
+					socket.receive(packet);
+					gotResponse = true;
+				} catch (Exception e) {
+					tries++;
+				}
+			}
+
+			// 3. client verifies that he is still here and ready
+			FIVRPacket a = FIVRPacketManager.depacketize(packet);
+			if (!a.header.RecvToSendAck) {
+				System.out.println("Could not connect to server.");
+				return;
+			}
+			
+//			header = new FIVRHeader(clientPort, port,
+//					PACKET_SEQUENCE_NUM, -1, -1, WINDOW_SIZE, true, false,
+//					false, true, false, WINDOW_SIZE, false, false, false);
+//			PACKET_SEQUENCE_NUM++;
+//			requestPacket = new FIVRPacket(header, new byte[0]);
+//			packet = new DatagramPacket(
+//					requestPacket.getBytes(), requestPacket.getBytes().length,
+//					host, port);
+//			socket.send(packet);
+//
+//			// 4. client waits for server to agree one last time
+//			socket.setSoTimeout(RTT_TIMEOUT);
+//			packet = new DatagramPacket(new byte[PACKET_SIZE], PACKET_SIZE, host, port);
+//			response = null;
+//
+//			gotResponse = false;
+//			tries = 0;
+//
+//			while (!gotResponse) {
+//				try {
+//					if (tries > 10) {
+//						System.out.println("Could not connect to server.");
+//						return;
+//					}
+//					socket.receive(packet);
+//					gotResponse = true;
+//				} catch (Exception e) {
+//					tries++;
+//				}
+//			}
+//			
+//			a = FIVRPacketManager.depacketize(packet);
+//			if (!a.header.RecvToSendAck) {
+//				System.out.println("Could not connect to server.");
+//				return;
+//			}
+			
+			connected = true;
+			System.out.println("Connected to server!");
+			return;
+
+		} catch (Exception e) {
+			System.out.println("Could not connect to server. Error: " + e.getMessage());
+			e.printStackTrace();
+			return;
+		}
 	}
 
 	public static void changeWindow(String size) {
-		return;
+		WINDOW_SIZE = Integer.parseInt(size);
 	}
 
 	/**
 	 * Disconnect socket connection
 	 */
 	public static void disconnect() {
+		if (!connected) {
+			System.out.println("Needs to be connected before disconnecting.");
+			return;
+		}
 		socket.close();
 		System.out.println("Connection closed.");
 	}
@@ -124,11 +218,40 @@ public class Client {
 	 * @return
 	 */
 	public static boolean getFile(String file) {
+		if (!connected) {
+			System.out.println("Connect to server first.");
+			return false;
+		}
 		try {
+
+			// send download request packet
 			byte[] data = file.getBytes();
-			FIVRHeader header = new FIVRHeader();
+			FIVRHeader header = new FIVRHeader(clientPort, port,
+					PACKET_SEQUENCE_NUM, -1, -1, WINDOW_SIZE, false, false,
+					false, false, false, WINDOW_SIZE, true, false, false);
+			PACKET_SEQUENCE_NUM++;
+			FIVRPacket requestPacket = new FIVRPacket(header, data);
+			DatagramPacket packet = new DatagramPacket(
+					requestPacket.getBytes(), requestPacket.getBytes().length,
+					host, port);
+			socket.send(packet);
+
+			socket.setSoTimeout(RTT_TIMEOUT);
+			packet = new DatagramPacket(new byte[PACKET_SIZE], PACKET_SIZE, host, port);
+			FIVRPacket response = null;
+
+			while (!response.header.fileClosingBracket) {
+				socket.receive(packet);
+				response = FIVRPacketManager.depacketize(packet);
+
+				ArrayList<FIVRPacket> packetCollection = new ArrayList<FIVRPacket>();
+				packetCollection.add(response);
+			}
+
+			// while (haven't received end bracket packet)
+			// load all incoming packets into buffer and store together
 		} catch (Exception e) {
-			System.out.println("Error getting file: " + e);
+			System.out.println("Could not get that file. Error: " + e);
 		}
 		return false;
 	}
@@ -141,6 +264,10 @@ public class Client {
 	 * @return
 	 */
 	public static boolean postFile(String filename) {
+		if (!connected) {
+			System.out.println("Connect to server first.");
+			return false;
+		}
 		try {
 			System.out.println("Sending file to at " + host + ":" + port);
 
@@ -165,6 +292,8 @@ public class Client {
 				for (int j = 0; j < WINDOW_SIZE; j++) {
 					try {
 						FIVRPacket cur = packetsToSend.get(i);
+						cur.header.windowSize = WINDOW_SIZE; // needs to updated so client knows how many to get
+						cur.header.packetsForNextSet = WINDOW_SIZE;
 						packet = new DatagramPacket(cur.getBytes(),
 								cur.getBytes().length, host, port);
 						socket.send(packet);
@@ -179,7 +308,7 @@ public class Client {
 				}
 
 				socket.setSoTimeout(RTT_TIMEOUT);
-				packet = new DatagramPacket(new byte[100], 100, host, port);
+				packet = new DatagramPacket(new byte[PACKET_SIZE], PACKET_SIZE, host, port);
 
 				try {
 					socket.receive(packet);

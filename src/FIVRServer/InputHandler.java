@@ -1,5 +1,7 @@
 package FIVRServer;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.*;
 
 public class InputHandler implements Runnable {
@@ -36,8 +38,10 @@ public class InputHandler implements Runnable {
 			if (args[0].equalsIgnoreCase("fta-server") && args.length >= 3) {
 				try {
 					Server.serverPort = Integer.parseInt(args[1]);
+					Server.host = InetAddress.getByName(args[2]);
 					Server.emulatorPort = Integer.parseInt(args[3]);
-				} catch (NumberFormatException e) {
+					Server.emulatorPort = Server.serverPort-1; // COMMENT OUT IF TESTING WITH EMULATOR
+				} catch (NumberFormatException | UnknownHostException e) {
 					System.out.println("Invalid arguments");
 				}
 				Server.initializeState = true;
