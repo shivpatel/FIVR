@@ -95,7 +95,7 @@ public class Client {
 
 			clientPort = Integer.parseInt(clntPrt);
 			socket = new DatagramSocket(clientPort);
-			System.out.println("Connected to server!");
+			System.out.println("Remote host settings add. Type connect to establish a connection.");
 		} catch (Exception e) {
 			System.out.println("Error connecting: " + e);
 		}
@@ -183,6 +183,7 @@ public class Client {
 //				return;
 //			}
 			
+			connected = true;
 			System.out.println("Connected to server!");
 			return;
 
@@ -292,7 +293,7 @@ public class Client {
 					try {
 						FIVRPacket cur = packetsToSend.get(i);
 						cur.header.windowSize = WINDOW_SIZE; // needs to updated so client knows how many to get
-						cur.header.packetsForNextSet = WINDOW_SIZE; 
+						cur.header.packetsForNextSet = WINDOW_SIZE;
 						packet = new DatagramPacket(cur.getBytes(),
 								cur.getBytes().length, host, port);
 						socket.send(packet);
