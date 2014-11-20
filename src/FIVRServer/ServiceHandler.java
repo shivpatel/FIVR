@@ -144,7 +144,7 @@ public class ServiceHandler implements Runnable {
 					isLastPacket = current.header.fileClosingBracket;
 					boolean wasAdded = tmp.addPacket(current);
 					if (!wasAdded) {
-						
+						System.out.println("NACK response sent.");
 						// send NACK
 						FIVRHeader header = new FIVRHeader(Server.serverPort,
 								current.header.sourcePort, PACKET_SEQUENCE_NUM,
@@ -162,6 +162,7 @@ public class ServiceHandler implements Runnable {
 					remote_window_size = current.header.windowSize;
 				}
 
+				System.out.println("ACK response sent.");
 				// SEND ACK (remote_seq_start_num + remote_window_size - 1)
 				FIVRHeader header = new FIVRHeader(Server.serverPort,
 						current.header.sourcePort, PACKET_SEQUENCE_NUM,

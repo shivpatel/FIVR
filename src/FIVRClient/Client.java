@@ -314,7 +314,15 @@ public class Client {
 					socket.receive(packet);
 					FIVRPacket responseFIVRPacket = FIVRPacketManager
 							.depacketize(packet);
-					// if got NACK or ACK is not for desired sequence number
+					
+					// For Client Debugging
+					if (responseFIVRPacket.header.isNACK == 1) {
+						System.out.println("NACK " + responseFIVRPacket.header.ack);
+					} else {
+						System.out.println("ACK " + responseFIVRPacket.header.ack);
+					}
+					
+					// if got NACK or ACK is not for desired sequence number					
 					if (responseFIVRPacket.header.isNACK == 1
 							|| responseFIVRPacket.header.ack != (i + tmpSetSeqStartNum)) {
 						i = i - WINDOW_SIZE;
