@@ -28,7 +28,7 @@ public class Test
 			}
 		} */
 		
-		ArrayList<FIVRPacket> outputPackets = new ArrayList<FIVRPacket>();
+		ArrayList<FIVRPacket> outputPackets = new ArrayList<FIVRPacket>(); 
 		
 		for(int i = 0; i < packets.size(); i++)
 		{

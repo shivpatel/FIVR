@@ -47,7 +47,7 @@ public class FIVRPacketManager
 		openPacket.header.setChecksum(FIVRChecksum.generateChecksum(openPacket.getBytes(false)));
 		seqNum += 1;
 		
-		packets.add(openPacket);
+		packets.add(openPacket); 
 		
 		int bufferOffset = 0;
 		

@@ -26,7 +26,7 @@ public class FIVRPacket implements Comparable<FIVRPacket>, Serializable
 	 * @return Byte array representation of this FIVRPacket
 	 * @throws IOException
 	 */
-	public byte[] getBytes(boolean withChecksum)
+	public byte[] getBytes(boolean withChecksum) 
 	{
 		if(payload != null)
 		{

@@ -38,7 +38,7 @@ public class FIVRBuffer
 		{
 			return false;
 		}
-		else
+		else 
 		{
 			if(packet.header.seqNum >= start && packet.header.seqNum < start + window)//packet in window range
 			{				

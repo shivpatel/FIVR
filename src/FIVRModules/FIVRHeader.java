@@ -154,7 +154,7 @@ public class FIVRHeader implements Serializable
 	 * 
 	 * @return
 	 */
-	public byte[] getBytes() 
+	public byte[] getBytes()  
 	{
 		ByteBuffer buffer = ByteBuffer.allocate(FIVRHeader.HEADER_SIZE);
 		buffer.order(ByteOrder.LITTLE_ENDIAN);
