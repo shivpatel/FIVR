@@ -53,7 +53,7 @@ public class ServiceHandler implements Runnable {
 						if (pkt.header.ConnectRequest) {
 							System.out
 									.println("Connection request packet arrived.");
-							handleConnectRequset(pkt);
+							handleConnectRequset(pkt,packet);
 						} else if (pkt.header.isDownload
 								&& pkt.header.fileOpenBracket) {
 							System.out
@@ -71,16 +71,16 @@ public class ServiceHandler implements Runnable {
 							System.out.println("Unknown packet arrived.");
 						}
 
-						// log stuff here if needed
-						logOutput = "Received from " + packet.getAddress()
-								+ ":" + packet.getPort() + ", data: "
-								+ new String(packet.getData());
-
-						// save file to current directory
-						FIVRFile toSave = new FIVRFile(packet.getData());
-
-						// create response and send back to client here
-						socket.send(packet); // response
+						// // log stuff here if needed
+						// logOutput = "Received from " + packet.getAddress()
+						// + ":" + packet.getPort() + ", data: "
+						// + new String(packet.getData());
+						//
+						// // save file to current directory
+						// FIVRFile toSave = new FIVRFile(packet.getData());
+						//
+						// // create response and send back to client here
+						// socket.send(packet); // response
 					}
 
 				}
@@ -100,8 +100,23 @@ public class ServiceHandler implements Runnable {
 		}
 	}
 
-	public void handleConnectRequset(FIVRPacket packet) {
-
+	public void handleConnectRequset(FIVRPacket packet, DatagramPacket datagram) {
+		try {
+			System.out.println("Processing incoming connection request.");
+			FIVRHeader header = new FIVRHeader(Server.serverPort,
+					packet.header.sourcePort, PACKET_SEQUENCE_NUM, -1, -1,
+					WINDOW_SIZE, true, false, false, false, true, WINDOW_SIZE,
+					false, false, false);
+			PACKET_SEQUENCE_NUM++;
+			FIVRPacket response = new FIVRPacket(header, new byte[0]);
+			DatagramPacket resposneDG = new DatagramPacket(response.getBytes(),
+					response.getBytes().length, Server.host,
+					Server.emulatorPort);
+			socket.send(resposneDG);
+			System.out.println("Client from " + datagram.getSocketAddress() + " connected!");
+		} catch (Exception e) {
+			System.out.println("Client attempted to connect, but failed.");
+		}
 	}
 
 	public void handleDownloadRequset(FIVRPacket packet) {
