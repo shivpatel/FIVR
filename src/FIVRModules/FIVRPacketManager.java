@@ -120,7 +120,7 @@ public class FIVRPacketManager
             ois = new ObjectInputStream(bis);
             fivrPacket = (FIVRPacket) ois.readObject();
         } 
-        finally 
+        finally
         {
             if (bis != null) 
             {
