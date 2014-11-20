@@ -34,7 +34,7 @@ public class FIVRBuffer
 	{
 		int checksum = FIVRChecksum.generateChecksum(packet.getBytes());
 		
-		if(checksum != packet.header.checksum)//packet is corrupt
+		if(checksum != packet.header.getChecksum())//packet is corrupt
 		{
 			return false;
 		}

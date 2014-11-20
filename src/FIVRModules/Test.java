@@ -1,5 +1,7 @@
 package FIVRModules;
 
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.util.ArrayList;
@@ -8,12 +10,11 @@ public class Test
 {
 	public static void main(String[] args) throws IOException, ClassNotFoundException
 	{
-		ArrayList<FIVRPacket> packets = FIVRPacketManager.packetize("Lenna.png", (short)1234, (short)1235, 0, 512, 10, 0, false);
+		ArrayList<FIVRPacket> packets = FIVRPacketManager.packetize("Lenna.png", 1234, 1235, 0, 512, 10, 0, 0);
 		
-		FIVRPacket inputFIVRPacket = packets.get(1);
-		byte[] bytes = inputFIVRPacket.getBytes();
 		
-		byte[] fullBytes = new byte[bytes.length + 150];
+		
+		/*byte[] fullBytes = new byte[bytes.length + 150];
 		//artificially add some zeros at the end like it would be in socket.receive()
 		for(int i = 0; i < bytes.length + 150; i++)
 		{
@@ -25,11 +26,44 @@ public class Test
 			{
 				fullBytes[i] = 0;
 			}
-		} 
+		} */
 		
-		DatagramPacket packet = new DatagramPacket(fullBytes, fullBytes.length);
+		ArrayList<FIVRPacket> outputPackets = new ArrayList<FIVRPacket>();
 		
-		FIVRPacket outputFIVRPacket = FIVRPacketManager.depacketize(packet);
+		for(int i = 0; i < packets.size(); i++)
+		{
+			FIVRPacket inputFIVRPacket = packets.get(i);
+			byte[] bytes = inputFIVRPacket.getBytes();
+			
+			DatagramPacket packet = new DatagramPacket(bytes, bytes.length);		
+			FIVRPacket outputFIVRPacket = FIVRPacketManager.depacketize(packet);
+			outputPackets.add(outputFIVRPacket);
+		}
+		
+		ArrayList<Byte> lennaBytes = new ArrayList<Byte>();
+		for(int i = 1; i < outputPackets.size() -1; i++)
+		{
+			for(int j = 0; j < outputPackets.get(i).payload.length; j++)
+			{
+				lennaBytes.add(outputPackets.get(i).payload[j]);
+			}
+		}
+		
+		byte[] lenna = new byte[lennaBytes.size()];
+		
+		for(int i = 0; i < lennaBytes.size(); i++)
+		{
+			lenna[i] = lennaBytes.get(i);
+		}
+		
+		FIVRFile.writeBytesToFile("lenna depacketized.png", lenna);
+		
+		FIVRBuffer buffer = new FIVRBuffer(10, 0);
+		
+		buffer.addPacket(packets.get(2));
+		buffer.addPacket(packets.get(0));
+		buffer.addPacket(packets.get(1));
+		
 		
 		System.out.println(packets.size());
 	}

@@ -1,10 +1,9 @@
 package FIVRModules;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.ObjectOutput;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 public class FIVRPacket implements Comparable<FIVRPacket>, Serializable
 {
@@ -26,7 +25,25 @@ public class FIVRPacket implements Comparable<FIVRPacket>, Serializable
 	 * @return Byte array representation of this FIVRPacket
 	 * @throws IOException
 	 */
-	public byte[] getBytes() throws IOException
+	public byte[] getBytes()
+	{
+		if(payload != null)
+		{
+			ByteBuffer buffer = ByteBuffer.allocate(24 + payload.length);
+			buffer.order(ByteOrder.LITTLE_ENDIAN);
+			buffer.put(header.getBytes());
+			buffer.put(payload);
+			return buffer.array();
+		}
+		else
+		{
+			ByteBuffer buffer = ByteBuffer.allocate(24);
+			buffer.order(ByteOrder.LITTLE_ENDIAN);
+			buffer.put(header.getBytes());
+			return buffer.array();
+		}		
+	}
+	/*public byte[] getBytes() throws IOException
 	{
 		ByteArrayOutputStream bos = new ByteArrayOutputStream();
 		ObjectOutput out = null;
@@ -59,7 +76,7 @@ public class FIVRPacket implements Comparable<FIVRPacket>, Serializable
 		  }
 		}
 		return bytes;
-	}
+	}*/
 
 	@Override
 	public int compareTo(FIVRPacket packet) 

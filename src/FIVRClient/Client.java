@@ -145,9 +145,9 @@ public class Client {
 			System.out.println("Sending file to at " + host + ":" + port);
 
 			ArrayList<FIVRPacket> packetsToSend = FIVRPacketManager.packetize(
-					filename, (short) clientPort, (short) port,
+					filename, clientPort, port,
 					PACKET_SEQUENCE_NUM, PACKET_SIZE, WINDOW_SIZE, WINDOW_SIZE,
-					false);
+					0);
 
 			DatagramPacket packet = null;
 			int i = 0;
@@ -186,7 +186,7 @@ public class Client {
 					FIVRPacket responseFIVRPacket = FIVRPacketManager
 							.depacketize(packet);
 					// if got NACK or ACK is not for desired sequence number
-					if (responseFIVRPacket.header.isNACK
+					if (responseFIVRPacket.header.isNACK == 1
 							|| responseFIVRPacket.header.ack != (i + tmpSetSeqStartNum)) {
 						i = i - WINDOW_SIZE;
 						WINDOW_THRESHOLD = (WINDOW_THRESHOLD / 2) + 1;

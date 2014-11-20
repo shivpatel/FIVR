@@ -1,6 +1,7 @@
 package FIVRModules;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -92,5 +93,21 @@ public class FIVRFile implements Serializable {
 
 	public void setData(byte[] data) {
 		this.data = data;
+	}
+	
+	public static void writeBytesToFile(String outputFilePath, byte[] bytes)
+	{
+		try {
+			 
+		    //convert array of bytes into file
+		    FileOutputStream fileOuputStream = 
+	                  new FileOutputStream(outputFilePath); 
+		    fileOuputStream.write(bytes);
+		    fileOuputStream.close();
+	 
+		    System.out.println("Done");
+	        }catch(Exception e){
+	            e.printStackTrace();
+        }
 	}
 }

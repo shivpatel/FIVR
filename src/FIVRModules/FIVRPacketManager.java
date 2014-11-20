@@ -1,11 +1,11 @@
 package FIVRModules;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.net.DatagramPacket;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 
 /**
@@ -27,7 +27,7 @@ public class FIVRPacketManager
 	 * @return
 	 * @throws IOException
 	 */
-	public static ArrayList<FIVRPacket> packetize(String filepath, short sourcePort, short destinationPort, int startingSequenceNumber, int segmentSize, int window, int packetsForNextSet, boolean isDownload) throws IOException
+	public static ArrayList<FIVRPacket> packetize(String filepath, int sourcePort, int destinationPort, int startingSequenceNumber, int segmentSize, int window, int packetsForNextSet, int isDownload) throws IOException
 	{
 		ArrayList<FIVRPacket> packets = new ArrayList<FIVRPacket>();
 		
@@ -42,9 +42,9 @@ public class FIVRPacketManager
 		int seqNum = startingSequenceNumber;
 		
 		//Create "new file open bracket" packet
-		FIVRHeader openHeader = new FIVRHeader(sourcePort, destinationPort, seqNum, -1, -1, window, false, false, false, false, false, packetsForNextSet, isDownload, true, false);
+		FIVRHeader openHeader = new FIVRHeader(sourcePort, destinationPort, seqNum, -1, -1, window, 0, 0, 0, 0, 0, packetsForNextSet, isDownload, 1, 0);
 		FIVRPacket openPacket = new FIVRPacket(openHeader, null);//no payload
-		openPacket.header.checksum = FIVRChecksum.generateChecksum(openPacket.getBytes());
+		openPacket.header.setChecksum(FIVRChecksum.generateChecksum(openPacket.getBytes()));
 		seqNum += 1;
 		
 		packets.add(openPacket);
@@ -54,7 +54,7 @@ public class FIVRPacketManager
 		//Create data packets
 		while(bufferOffset < contentBuffer.length)
 		{
-			FIVRHeader currentHeader = new FIVRHeader(sourcePort, destinationPort, seqNum, -1, -1, window, false, false, false, false, false, packetsForNextSet, isDownload, true, false);
+			FIVRHeader currentHeader = new FIVRHeader(sourcePort, destinationPort, seqNum, -1, -1, window, 0, 0, 0, 0, 0, packetsForNextSet, isDownload, 0, 0);
 			FIVRPacket currentPacket = new FIVRPacket(currentHeader, null);
 			seqNum += 1;
 			
@@ -75,15 +75,15 @@ public class FIVRPacketManager
 			bufferOffset += payloadSize;
 			
 			currentPacket.payload = payload;
-			currentPacket.header.checksum = FIVRChecksum.generateChecksum(currentPacket.getBytes());
+			currentPacket.header.setChecksum(FIVRChecksum.generateChecksum(currentPacket.getBytes()));
 			
 			packets.add(currentPacket);
 		}
 		
 		//Create "file closing bracket" packet
-		FIVRHeader closeHeader = new FIVRHeader(sourcePort, destinationPort, seqNum, -1, -1, window, false, false, false, false, false, packetsForNextSet, isDownload, false, true);
+		FIVRHeader closeHeader = new FIVRHeader(sourcePort, destinationPort, seqNum, -1, -1, window, 0, 0, 0, 0, 0, packetsForNextSet, isDownload, 0, 1);
 		FIVRPacket closePacket = new FIVRPacket(closeHeader, null);//no payload
-		closePacket.header.checksum = FIVRChecksum.generateChecksum(closePacket.getBytes());
+		closePacket.header.setChecksum(FIVRChecksum.generateChecksum(closePacket.getBytes()));
 		seqNum += 1;
 		
 		packets.add(closePacket);
@@ -94,13 +94,56 @@ public class FIVRPacketManager
 	/**
 	 * Extracts data from UDP DatagramPacket into a FIVRPacket
 	 * @param datagram UDP datagram containing the FIVRPacket in its payload
-	 * @return FIVRPacket contained in UDP the DatagramPacket
+	 * @return FIVRPacket contained in UDP the DatagramPacket, null if the datagram packet is too small to be valid (<24 bytes b/c the FIVRHeader alone is 24 bytes)
 	 * @throws IOException
 	 * @throws ClassNotFoundException
 	 */
 	public static FIVRPacket depacketize(DatagramPacket datagram) throws IOException, ClassNotFoundException
 	{
-        FIVRPacket fivrPacket = null;
+		byte[] datagramData = datagram.getData();
+		byte[] payloadBytes;
+		
+		if(datagramData.length >= 24)
+		{
+			ByteBuffer headerBuffer = ByteBuffer.allocate(FIVRHeader.HEADER_SIZE);
+			headerBuffer.order(ByteOrder.LITTLE_ENDIAN);
+			
+			//insert header bytes into the buffer (header is first 24 bytes of the datagram data)
+			headerBuffer.put(datagramData, 0, FIVRHeader.HEADER_SIZE);
+			headerBuffer.position(0);
+
+			//strip out seperate lines in the header and use them to construct FIVRHeader object
+			/*int line1 = headerBuffer.getInt();
+			int line2 = headerBuffer.getInt();
+			int line3 = headerBuffer.getInt();
+			int line4 = headerBuffer.getInt();
+			int line5 = headerBuffer.getInt();
+			int line6 = headerBuffer.getInt();*/
+			FIVRHeader header = new FIVRHeader(headerBuffer.getInt(), headerBuffer.getInt(), headerBuffer.getInt(), headerBuffer.getInt(), headerBuffer.getInt(), headerBuffer.getInt());
+			
+			if(datagramData.length > 24)//packet contains payload
+			{
+				int test = datagramData.length - FIVRHeader.HEADER_SIZE;
+				ByteBuffer payloadBuffer = ByteBuffer.allocate(datagramData.length - FIVRHeader.HEADER_SIZE);
+				payloadBuffer.order(ByteOrder.LITTLE_ENDIAN);
+				
+				//strip packet payload from the datagramData
+				payloadBuffer.put(datagramData, FIVRHeader.HEADER_SIZE, datagramData.length - FIVRHeader.HEADER_SIZE);
+				payloadBytes = payloadBuffer.array();
+				
+				FIVRPacket packet = new FIVRPacket(header, payloadBytes);
+				
+				return packet;
+			}
+			else//packet contains no payload
+			{
+				FIVRPacket packet = new FIVRPacket(header, null);
+				
+				return packet;
+			}
+		}
+		
+        /*FIVRPacket fivrPacket = null;
         ByteArrayInputStream bis = null;
         ObjectInputStream ois = null;
 
@@ -130,7 +173,7 @@ public class FIVRPacketManager
             {
                 ois.close();
             }
-        }
-        return fivrPacket;
+        }*/
+        return null;
 	}
 }
