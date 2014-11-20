@@ -18,7 +18,7 @@ public class FIVRPacket implements Comparable<FIVRPacket>, Serializable
 	{
 		this.header = header;
 		this.payload = payload;
-	}
+	} 
 	
 	/**
 	 * Converts FIVRPacket to a byte array

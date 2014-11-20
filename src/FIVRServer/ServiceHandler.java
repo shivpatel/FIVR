@@ -51,21 +51,21 @@ public class ServiceHandler implements Runnable {
 						socket.receive(packet); // receiving packet
 
 						FIVRPacket pkt = FIVRPacketManager.depacketize(packet);
-						if (pkt.header.ConnectRequest) {
+						if (pkt.header.connectRequest == 1) {
 							System.out
 									.println("Connection request packet arrived.");
 							handleConnectRequset(pkt, packet);
-						} else if (pkt.header.isDownload
-								&& pkt.header.fileOpenBracket) {
+						} else if (pkt.header.isDownload == 1
+								&& pkt.header.fileOpenBracket == 1) {
 							System.out
 									.println("Download file packet request arrived.");
 							handleDownloadRequset(pkt, packet);
-						} else if (!pkt.header.isDownload
-								&& pkt.header.fileOpenBracket) {
+						} else if (pkt.header.isDownload == 0
+								&& pkt.header.fileOpenBracket == 1) {
 							System.out
 									.println("Upload file packet request arrived.");
 							handleUploadRequset(pkt, packet);
-						} else if (pkt.header.fileOpenBracket) {
+						} else if (pkt.header.fileOpenBracket == 1) {
 							System.out
 									.println("Open bracket packet arrived; unknown action next.");
 						} else {
@@ -106,8 +106,8 @@ public class ServiceHandler implements Runnable {
 			System.out.println("Processing incoming connection request.");
 			FIVRHeader header = new FIVRHeader(Server.serverPort,
 					packet.header.sourcePort, PACKET_SEQUENCE_NUM, -1, -1,
-					WINDOW_SIZE, true, false, false, false, true, WINDOW_SIZE,
-					false, false, false);
+					WINDOW_SIZE, 1, 0, 0, 0, 1, WINDOW_SIZE,
+					0, 0, 0);
 			PACKET_SEQUENCE_NUM++;
 			FIVRPacket response = new FIVRPacket(header, new byte[0]);
 			DatagramPacket resposneDG = new DatagramPacket(response.getBytes(),
@@ -129,10 +129,10 @@ public class ServiceHandler implements Runnable {
 		DatagramPacket tmpPacket = new DatagramPacket(new byte[PACKET_SIZE], PACKET_SIZE);
 		int remote_window_size = packet.header.windowSize;
 		int remote_seq_start_num = packet.header.seqNum;
-		boolean isLastPacket = false;
+		int isLastPacket = 0;
 
 		System.out.println("Remote window size is: " + remote_window_size);
-		while (!isLastPacket) {
+		while (isLastPacket == 0) {
 			try {
 				
 				FIVRBuffer tmp = new FIVRBuffer(remote_window_size,
@@ -149,8 +149,8 @@ public class ServiceHandler implements Runnable {
 						FIVRHeader header = new FIVRHeader(Server.serverPort,
 								current.header.sourcePort, PACKET_SEQUENCE_NUM,
 								remote_seq_start_num + remote_window_size - 1, -1,
-								WINDOW_SIZE, false, false, true, false, false,
-								WINDOW_SIZE, false, false, false);
+								WINDOW_SIZE, 0, 0, 1, 0, 0,
+								WINDOW_SIZE, 0, 0, 0);
 						PACKET_SEQUENCE_NUM++;
 						FIVRPacket response = new FIVRPacket(header, new byte[0]);
 						DatagramPacket responseDG = new DatagramPacket(
@@ -166,8 +166,8 @@ public class ServiceHandler implements Runnable {
 				FIVRHeader header = new FIVRHeader(Server.serverPort,
 						current.header.sourcePort, PACKET_SEQUENCE_NUM,
 						remote_seq_start_num + remote_window_size - 1, -1,
-						WINDOW_SIZE, false, false, false, false, false,
-						WINDOW_SIZE, false, false, false);
+						WINDOW_SIZE, 0, 0, 0, 0, 0,
+						WINDOW_SIZE, 0, 0, 0);
 				PACKET_SEQUENCE_NUM++;
 				FIVRPacket response = new FIVRPacket(header, new byte[0]);
 				DatagramPacket responseDG = new DatagramPacket(

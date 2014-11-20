@@ -109,8 +109,8 @@ public class Client {
 		try {
 			// 1. client request to connect with server
 			FIVRHeader header = new FIVRHeader(clientPort, port,
-					PACKET_SEQUENCE_NUM, -1, -1, WINDOW_SIZE, true, false,
-					false, false, false, WINDOW_SIZE, false, false, false);
+					PACKET_SEQUENCE_NUM, -1, -1, WINDOW_SIZE, 1, 0,
+					0, 0, 0, WINDOW_SIZE, 0, 0, 0);
 			PACKET_SEQUENCE_NUM++;
 			FIVRPacket requestPacket = new FIVRPacket(header, new byte[0]);
 			DatagramPacket packet = new DatagramPacket(
@@ -141,7 +141,7 @@ public class Client {
 
 			// 3. client verifies that he is still here and ready
 			FIVRPacket a = FIVRPacketManager.depacketize(packet);
-			if (!a.header.RecvToSendAck) {
+			if (a.header.recvToSendAck == 0) {
 				System.out.println("Could not connect to server.");
 				return;
 			}
@@ -227,8 +227,8 @@ public class Client {
 			// send download request packet
 			byte[] data = file.getBytes();
 			FIVRHeader header = new FIVRHeader(clientPort, port,
-					PACKET_SEQUENCE_NUM, -1, -1, WINDOW_SIZE, false, false,
-					false, false, false, WINDOW_SIZE, true, false, false);
+					PACKET_SEQUENCE_NUM, -1, -1, WINDOW_SIZE, 0, 0,
+					0, 0, 0, WINDOW_SIZE, 1, 0, 0);
 			PACKET_SEQUENCE_NUM++;
 			FIVRPacket requestPacket = new FIVRPacket(header, data);
 			DatagramPacket packet = new DatagramPacket(
@@ -240,7 +240,7 @@ public class Client {
 			packet = new DatagramPacket(new byte[PACKET_SIZE], PACKET_SIZE, host, port);
 			FIVRPacket response = null;
 
-			while (!response.header.fileClosingBracket) {
+			while (response.header.fileClosingBracket == 0) {
 				socket.receive(packet);
 				response = FIVRPacketManager.depacketize(packet);
 

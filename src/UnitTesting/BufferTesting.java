@@ -36,7 +36,7 @@ public class BufferTesting {
 		ArrayList<FIVRPacket> packets = FIVRPacketManager.packetize("C:\\Users\\timke_000\\git\\FivR - new\\FIVR\\Lenna.png", 1234, 1235, 0, 512, 10, 0, 0);
 		
 		buffer.addPacket(packets.get(0));
-		buffer.addPacket(packets.get(1));
+		buffer.addPacket(packets.get(1)); 
 		buffer.addPacket(packets.get(50));
 		
 		assertTrue(buffer.getBuffer().size() == 2);

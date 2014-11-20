@@ -34,7 +34,7 @@ public class Test
 		{
 			FIVRPacket inputFIVRPacket = packets.get(i);
 			byte[] bytes = inputFIVRPacket.getBytes();
-			
+			 
 			DatagramPacket packet = new DatagramPacket(bytes, bytes.length);		
 			FIVRPacket outputFIVRPacket = FIVRPacketManager.depacketize(packet);
 			outputPackets.add(outputFIVRPacket);

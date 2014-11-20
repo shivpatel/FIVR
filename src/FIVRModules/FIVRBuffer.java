@@ -19,7 +19,7 @@ public class FIVRBuffer
 	 */
 	public FIVRBuffer(int window, int start)
 	{
-		buffer = new ArrayList<FIVRPacket>();
+		buffer = new ArrayList<FIVRPacket>(); 
 		this.window = window;
 		this.start = start;
 	}

@@ -23,7 +23,7 @@ public class FIVRHeader implements Serializable
 	public int isNACK;
 	public int sendToRecvAck;
 	public int recvToSendAck;
-	public int isDownload;
+	public int isDownload; 
 	public int fileOpenBracket;
 	public int fileClosingBracket;
 	
