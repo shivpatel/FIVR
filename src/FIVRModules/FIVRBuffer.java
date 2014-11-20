@@ -32,7 +32,7 @@ public class FIVRBuffer
 	 */
 	public boolean addPacket(FIVRPacket packet) throws IOException
 	{
-		int checksum = FIVRChecksum.generateChecksum(packet.getBytes());
+		int checksum = FIVRChecksum.generateChecksum(packet.getBytes(false));
 		
 		if(checksum != packet.header.getChecksum())//packet is corrupt
 		{

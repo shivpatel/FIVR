@@ -33,7 +33,7 @@ public class Test
 		for(int i = 0; i < packets.size(); i++)
 		{
 			FIVRPacket inputFIVRPacket = packets.get(i);
-			byte[] bytes = inputFIVRPacket.getBytes();
+			byte[] bytes = inputFIVRPacket.getBytes(true);
 			 
 			DatagramPacket packet = new DatagramPacket(bytes, bytes.length);		
 			FIVRPacket outputFIVRPacket = FIVRPacketManager.depacketize(packet);
@@ -58,11 +58,14 @@ public class Test
 		
 		FIVRFile.writeBytesToFile("lenna depacketized.png", lenna);
 		
-		FIVRBuffer buffer = new FIVRBuffer(10, 0);
+		FIVRBuffer buffer = new FIVRBuffer(10, 1);
 		
-		buffer.addPacket(packets.get(2));
-		buffer.addPacket(packets.get(0));
-		buffer.addPacket(packets.get(1));
+		buffer.addPacket(outputPackets.get(2));
+		buffer.addPacket(outputPackets.get(2));
+		buffer.addPacket(outputPackets.get(0));
+		buffer.addPacket(outputPackets.get(1));
+		buffer.addPacket(outputPackets.get(10));
+		buffer.addPacket(outputPackets.get(15));
 		
 		
 		System.out.println(packets.size());

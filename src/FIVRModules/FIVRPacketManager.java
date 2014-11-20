@@ -42,9 +42,9 @@ public class FIVRPacketManager
 		int seqNum = startingSequenceNumber;
 		
 		//Create "new file open bracket" packet
-		FIVRHeader openHeader = new FIVRHeader(sourcePort, destinationPort, seqNum, -1, -1, window, 0, 0, 0, 0, 0, packetsForNextSet, isDownload, 1, 0);
+		FIVRHeader openHeader = new FIVRHeader(sourcePort, destinationPort, seqNum, -1, 0, window, 0, 0, 0, 0, 0, packetsForNextSet, isDownload, 1, 0);
 		FIVRPacket openPacket = new FIVRPacket(openHeader, null);//no payload
-		openPacket.header.setChecksum(FIVRChecksum.generateChecksum(openPacket.getBytes()));
+		openPacket.header.setChecksum(FIVRChecksum.generateChecksum(openPacket.getBytes(false)));
 		seqNum += 1;
 		
 		packets.add(openPacket);
@@ -54,7 +54,7 @@ public class FIVRPacketManager
 		//Create data packets
 		while(bufferOffset < contentBuffer.length)
 		{
-			FIVRHeader currentHeader = new FIVRHeader(sourcePort, destinationPort, seqNum, -1, -1, window, 0, 0, 0, 0, 0, packetsForNextSet, isDownload, 0, 0);
+			FIVRHeader currentHeader = new FIVRHeader(sourcePort, destinationPort, seqNum, -1, 0, window, 0, 0, 0, 0, 0, packetsForNextSet, isDownload, 0, 0);
 			FIVRPacket currentPacket = new FIVRPacket(currentHeader, null);
 			seqNum += 1;
 			
@@ -75,15 +75,15 @@ public class FIVRPacketManager
 			bufferOffset += payloadSize;
 			
 			currentPacket.payload = payload;
-			currentPacket.header.setChecksum(FIVRChecksum.generateChecksum(currentPacket.getBytes()));
+			currentPacket.header.setChecksum(FIVRChecksum.generateChecksum(currentPacket.getBytes(false)));
 			
 			packets.add(currentPacket);
 		}
 		
 		//Create "file closing bracket" packet
-		FIVRHeader closeHeader = new FIVRHeader(sourcePort, destinationPort, seqNum, -1, -1, window, 0, 0, 0, 0, 0, packetsForNextSet, isDownload, 0, 1);
+		FIVRHeader closeHeader = new FIVRHeader(sourcePort, destinationPort, seqNum, -1, 0, window, 0, 0, 0, 0, 0, packetsForNextSet, isDownload, 0, 1);
 		FIVRPacket closePacket = new FIVRPacket(closeHeader, null);//no payload
-		closePacket.header.setChecksum(FIVRChecksum.generateChecksum(closePacket.getBytes()));
+		closePacket.header.setChecksum(FIVRChecksum.generateChecksum(closePacket.getBytes(false)));
 		seqNum += 1;
 		
 		packets.add(closePacket);
@@ -112,18 +112,10 @@ public class FIVRPacketManager
 			headerBuffer.put(datagramData, 0, FIVRHeader.HEADER_SIZE);
 			headerBuffer.position(0);
 
-			//strip out seperate lines in the header and use them to construct FIVRHeader object
-			/*int line1 = headerBuffer.getInt();
-			int line2 = headerBuffer.getInt();
-			int line3 = headerBuffer.getInt();
-			int line4 = headerBuffer.getInt();
-			int line5 = headerBuffer.getInt();
-			int line6 = headerBuffer.getInt();*/
 			FIVRHeader header = new FIVRHeader(headerBuffer.getInt(), headerBuffer.getInt(), headerBuffer.getInt(), headerBuffer.getInt(), headerBuffer.getInt(), headerBuffer.getInt());
 			
 			if(datagramData.length > 24)//packet contains payload
 			{
-				int test = datagramData.length - FIVRHeader.HEADER_SIZE;
 				ByteBuffer payloadBuffer = ByteBuffer.allocate(datagramData.length - FIVRHeader.HEADER_SIZE);
 				payloadBuffer.order(ByteOrder.LITTLE_ENDIAN);
 				
@@ -142,38 +134,7 @@ public class FIVRPacketManager
 				return packet;
 			}
 		}
-		
-        /*FIVRPacket fivrPacket = null;
-        ByteArrayInputStream bis = null;
-        ObjectInputStream ois = null;
 
-        int length = datagram.getLength();
-        byte[] datagramData = datagram.getData();
-        byte[] data = new byte[length];
-        
-        for(int i = 0; i < length; i++)//gets data we care about, removing any trailing zeros from the datagram
-        {
-        	data[i] = datagramData[i];
-        }
-        
-        
-        try 
-        {
-            bis = new ByteArrayInputStream(data);
-            ois = new ObjectInputStream(bis);
-            fivrPacket = (FIVRPacket) ois.readObject();
-        } 
-        finally
-        {
-            if (bis != null)
-            {
-                bis.close();
-            }
-            if (ois != null) 
-            {
-                ois.close();
-            }
-        }*/
         return null;
 	}
 }

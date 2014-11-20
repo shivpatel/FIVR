@@ -114,7 +114,7 @@ public class Client {
 			PACKET_SEQUENCE_NUM++;
 			FIVRPacket requestPacket = new FIVRPacket(header, new byte[0]);
 			DatagramPacket packet = new DatagramPacket(
-					requestPacket.getBytes(), requestPacket.getBytes().length,
+					requestPacket.getBytes(true), requestPacket.getBytes(true).length,
 					host, port);
 			socket.send(packet);
 
@@ -232,7 +232,7 @@ public class Client {
 			PACKET_SEQUENCE_NUM++;
 			FIVRPacket requestPacket = new FIVRPacket(header, data);
 			DatagramPacket packet = new DatagramPacket(
-					requestPacket.getBytes(), requestPacket.getBytes().length,
+					requestPacket.getBytes(true), requestPacket.getBytes(true).length,
 					host, port);
 			socket.send(packet);
 
@@ -294,8 +294,8 @@ public class Client {
 						FIVRPacket cur = packetsToSend.get(i);
 						cur.header.windowSize = WINDOW_SIZE; // needs to updated so client knows how many to get
 						cur.header.packetsForNextSet = WINDOW_SIZE;
-						packet = new DatagramPacket(cur.getBytes(),
-								cur.getBytes().length, host, port);
+						packet = new DatagramPacket(cur.getBytes(true),
+								cur.getBytes(true).length, host, port);
 						socket.send(packet);
 						System.out.println("Sent packet #" + i);
 						i++;

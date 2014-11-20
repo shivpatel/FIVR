@@ -110,8 +110,8 @@ public class ServiceHandler implements Runnable {
 					0, 0, 0);
 			PACKET_SEQUENCE_NUM++;
 			FIVRPacket response = new FIVRPacket(header, new byte[0]);
-			DatagramPacket resposneDG = new DatagramPacket(response.getBytes(),
-					response.getBytes().length, Server.host,
+			DatagramPacket resposneDG = new DatagramPacket(response.getBytes(true),
+					response.getBytes(true).length, Server.host,
 					Server.emulatorPort);
 			socket.send(resposneDG);
 			System.out.println("Client from " + datagram.getSocketAddress()
@@ -154,7 +154,7 @@ public class ServiceHandler implements Runnable {
 						PACKET_SEQUENCE_NUM++;
 						FIVRPacket response = new FIVRPacket(header, new byte[0]);
 						DatagramPacket responseDG = new DatagramPacket(
-								response.getBytes(), response.getBytes().length,
+								response.getBytes(true), response.getBytes(true).length,
 								Server.host, response.header.destPort);
 						socket.send(responseDG);
 						
@@ -171,7 +171,7 @@ public class ServiceHandler implements Runnable {
 				PACKET_SEQUENCE_NUM++;
 				FIVRPacket response = new FIVRPacket(header, new byte[0]);
 				DatagramPacket responseDG = new DatagramPacket(
-						response.getBytes(), response.getBytes().length,
+						response.getBytes(true), response.getBytes(true).length,
 						Server.host, response.header.destPort);
 				socket.send(responseDG);
 

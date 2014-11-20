@@ -22,62 +22,47 @@ public class FIVRPacket implements Comparable<FIVRPacket>, Serializable
 	
 	/**
 	 * Converts FIVRPacket to a byte array
+	 * @param withChecksum indicate whether you want the bytes to include the checksum inside the header
 	 * @return Byte array representation of this FIVRPacket
 	 * @throws IOException
 	 */
-	public byte[] getBytes()
+	public byte[] getBytes(boolean withChecksum)
 	{
 		if(payload != null)
 		{
-			ByteBuffer buffer = ByteBuffer.allocate(24 + payload.length);
+			ByteBuffer buffer = ByteBuffer.allocate(FIVRHeader.HEADER_SIZE + payload.length);
 			buffer.order(ByteOrder.LITTLE_ENDIAN);
-			buffer.put(header.getBytes());
+			
+			if(withChecksum)
+			{
+				buffer.put(header.getBytes());
+			}
+			else
+			{
+				buffer.put(header.getBytesWithoutChecksum());
+			}	
+			
 			buffer.put(payload);
 			return buffer.array();
 		}
 		else
 		{
-			ByteBuffer buffer = ByteBuffer.allocate(24);
+			ByteBuffer buffer = ByteBuffer.allocate(FIVRHeader.HEADER_SIZE);
 			buffer.order(ByteOrder.LITTLE_ENDIAN);
-			buffer.put(header.getBytes());
+			
+			if(withChecksum)
+			{
+				buffer.put(header.getBytes());
+			}
+			else
+			{
+				buffer.put(header.getBytesWithoutChecksum());
+			}
+			
 			return buffer.array();
 		}		
 	}
-	/*public byte[] getBytes() throws IOException
-	{
-		ByteArrayOutputStream bos = new ByteArrayOutputStream();
-		ObjectOutput out = null;
-		
-		byte[] bytes;
-		
-		try 
-		{
-		  out = new ObjectOutputStream(bos);   
-		  out.writeObject(this);
-		  bytes = bos.toByteArray();
-		} 
-		finally 
-		{
-		  try 
-		  {
-		    if (out != null) 
-		    {
-		      out.close();
-		    }
-		  } 
-		  catch (IOException ex) {
-		    // ignore close exception
-		  }
-		  try 
-		  {
-		    bos.close();
-		  } catch (IOException ex) {
-		    // ignore close exception
-		  }
-		}
-		return bytes;
-	}*/
-
+	
 	@Override
 	public int compareTo(FIVRPacket packet) 
 	{

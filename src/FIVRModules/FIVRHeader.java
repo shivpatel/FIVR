@@ -167,4 +167,22 @@ public class FIVRHeader implements Serializable
 
 		return buffer.array();
 	}
+	
+	/**
+	 * 
+	 * @return Bytes without the checksum integer in it. This allows the calculation to happen successfully since on packet initial checksum creation, the checksum in the header was 0
+	 */
+	public byte[] getBytesWithoutChecksum()
+	{
+		ByteBuffer buffer = ByteBuffer.allocate(FIVRHeader.HEADER_SIZE);
+		buffer.order(ByteOrder.LITTLE_ENDIAN);
+		buffer.putInt(line1);
+		buffer.putInt(line2);
+		buffer.putInt(line3);
+		buffer.putInt(0);//place a 0 where the checksum would have been
+		buffer.putInt(line5);
+		buffer.putInt(line6);
+
+		return buffer.array();
+	}
 }
