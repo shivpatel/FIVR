@@ -90,7 +90,7 @@ public class Client {
 			host = InetAddress.getByName(ip);
 			port = Integer.parseInt(prt);
 
-			port = Integer.parseInt(clntPrt); // comment out if using emulator
+			port = Integer.parseInt(clntPrt) + 1; // comment out if using emulator
 
 			clientPort = Integer.parseInt(clntPrt);
 			socket = new DatagramSocket(clientPort);
@@ -101,7 +101,93 @@ public class Client {
 	}
 
 	public static void connect() {
-		// do handshake here
+		try {
+			// 1. client request to connect with server
+			FIVRHeader header = new FIVRHeader(clientPort, port,
+					PACKET_SEQUENCE_NUM, -1, -1, WINDOW_SIZE, true, false,
+					false, false, false, WINDOW_SIZE, false, false, false);
+			PACKET_SEQUENCE_NUM++;
+			FIVRPacket requestPacket = new FIVRPacket(header, new byte[0]);
+			DatagramPacket packet = new DatagramPacket(
+					requestPacket.getBytes(), requestPacket.getBytes().length,
+					host, port);
+			System.out.println("Created outgoing packet of size: " + requestPacket.getBytes().length);
+			socket.send(packet);
+
+			// 2. client waits for server to respond
+			socket.setSoTimeout(RTT_TIMEOUT);
+			packet = new DatagramPacket(new byte[PACKET_SIZE], PACKET_SIZE, host, port);
+			FIVRPacket response = null;
+
+			boolean gotResponse = false;
+			int tries = 0;
+
+			while (!gotResponse) {
+				System.out.println("Trying!");
+				try {
+					if (tries > 10) {
+						System.out.println("Tried 10x to connect to server, but no luck.");
+						return;
+					}
+					socket.receive(packet);
+					gotResponse = true;
+				} catch (Exception e) {
+					tries++;
+				}
+			}
+
+			// 3. client verifies that he is still here and ready
+			FIVRPacket a = FIVRPacketManager.depacketize(packet);
+			if (!a.header.RecvToSendAck) {
+				System.out.println("Could not connect to server.");
+				return;
+			}
+			
+			header = new FIVRHeader(clientPort, port,
+					PACKET_SEQUENCE_NUM, -1, -1, WINDOW_SIZE, true, false,
+					false, true, false, WINDOW_SIZE, false, false, false);
+			PACKET_SEQUENCE_NUM++;
+			requestPacket = new FIVRPacket(header, new byte[0]);
+			packet = new DatagramPacket(
+					requestPacket.getBytes(), requestPacket.getBytes().length,
+					host, port);
+			socket.send(packet);
+
+			// 4. client waits for server to agree one last time
+			socket.setSoTimeout(RTT_TIMEOUT);
+			packet = new DatagramPacket(new byte[PACKET_SIZE], PACKET_SIZE, host, port);
+			response = null;
+
+			gotResponse = false;
+			tries = 0;
+
+			while (!gotResponse) {
+				try {
+					if (tries > 10) {
+						System.out.println("Could not connect to server.");
+						return;
+					}
+					socket.receive(packet);
+					gotResponse = true;
+				} catch (Exception e) {
+					tries++;
+				}
+			}
+			
+			a = FIVRPacketManager.depacketize(packet);
+			if (!a.header.RecvToSendAck) {
+				System.out.println("Could not connect to server.");
+				return;
+			}
+			
+			System.out.println("Connected to server!");
+			return;
+
+		} catch (Exception e) {
+			System.out.println("Could not connect to server. Error: " + e.getMessage());
+			e.printStackTrace();
+			return;
+		}
 	}
 
 	public static void changeWindow(String size) {
@@ -125,10 +211,43 @@ public class Client {
 	 */
 	public static boolean getFile(String file) {
 		try {
+
+			// send download request packet
 			byte[] data = file.getBytes();
-			FIVRHeader header = new FIVRHeader();
+			FIVRHeader header = new FIVRHeader(clientPort, port,
+					PACKET_SEQUENCE_NUM, -1, -1, WINDOW_SIZE, false, false,
+					false, false, false, WINDOW_SIZE, true, false, false);
+			PACKET_SEQUENCE_NUM++;
+			FIVRPacket requestPacket = new FIVRPacket(header, data);
+			DatagramPacket packet = new DatagramPacket(
+					requestPacket.getBytes(), requestPacket.getBytes().length,
+					host, port);
+			socket.send(packet);
+
+			socket.setSoTimeout(RTT_TIMEOUT);
+			packet = new DatagramPacket(new byte[PACKET_SIZE], PACKET_SIZE, host, port); // TODO
+																			// what
+																			// value
+																			// to
+																			// make
+																			// 100?
+																			// max
+																			// buffer
+																			// size?
+			FIVRPacket response = null;
+
+			while (!response.header.fileClosingBracket) {
+				socket.receive(packet);
+				response = FIVRPacketManager.depacketize(packet);
+
+				ArrayList<FIVRPacket> packetCollection = new ArrayList<FIVRPacket>();
+				packetCollection.add(response);
+			}
+
+			// while (haven't received end bracket packet)
+			// load all incoming packets into buffer and store together
 		} catch (Exception e) {
-			System.out.println("Error getting file: " + e);
+			System.out.println("Could not get that file. Error: " + e);
 		}
 		return false;
 	}
@@ -179,7 +298,7 @@ public class Client {
 				}
 
 				socket.setSoTimeout(RTT_TIMEOUT);
-				packet = new DatagramPacket(new byte[100], 100, host, port);
+				packet = new DatagramPacket(new byte[PACKET_SIZE], PACKET_SIZE, host, port);
 
 				try {
 					socket.receive(packet);
