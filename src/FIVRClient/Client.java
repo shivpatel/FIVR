@@ -16,10 +16,11 @@ public class Client {
 	public static InetAddress host;
 	public static int port;
 	public static int clientPort;
+	public static boolean connected = false;
 
 	public static int WINDOW_THRESHOLD = 25; // 25 max
 	public static int WINDOW_SIZE = 5; // 5 packets per window
-	public static int PACKET_SIZE = 200; // 200 bytes
+	public static int PACKET_SIZE = 512; // 512 bytes
 	public static int BUFFER_SIZE = 1000; // 1000 bytes
 	public static int RTT_TIMEOUT = 2000; // 2 sec.
 	public static int CONNECTION_TIMEOUT = 30000; // 30 sec.
@@ -101,6 +102,10 @@ public class Client {
 	}
 
 	public static void connect() {
+		if (connected) {
+			System.out.println("Already connected to server " + host + ":" + port);
+			return;
+		}
 		try {
 			// 1. client request to connect with server
 			FIVRHeader header = new FIVRHeader(clientPort, port,
@@ -191,13 +196,17 @@ public class Client {
 	}
 
 	public static void changeWindow(String size) {
-		return;
+		WINDOW_SIZE = Integer.parseInt(size);
 	}
 
 	/**
 	 * Disconnect socket connection
 	 */
 	public static void disconnect() {
+		if (!connected) {
+			System.out.println("Needs to be connected before disconnecting.");
+			return;
+		}
 		socket.close();
 		System.out.println("Connection closed.");
 	}
@@ -210,6 +219,10 @@ public class Client {
 	 * @return
 	 */
 	public static boolean getFile(String file) {
+		if (!connected) {
+			System.out.println("Connect to server first.");
+			return false;
+		}
 		try {
 
 			// send download request packet
@@ -225,15 +238,7 @@ public class Client {
 			socket.send(packet);
 
 			socket.setSoTimeout(RTT_TIMEOUT);
-			packet = new DatagramPacket(new byte[PACKET_SIZE], PACKET_SIZE, host, port); // TODO
-																			// what
-																			// value
-																			// to
-																			// make
-																			// 100?
-																			// max
-																			// buffer
-																			// size?
+			packet = new DatagramPacket(new byte[PACKET_SIZE], PACKET_SIZE, host, port);
 			FIVRPacket response = null;
 
 			while (!response.header.fileClosingBracket) {
@@ -260,6 +265,10 @@ public class Client {
 	 * @return
 	 */
 	public static boolean postFile(String filename) {
+		if (!connected) {
+			System.out.println("Connect to server first.");
+			return false;
+		}
 		try {
 			System.out.println("Sending file to at " + host + ":" + port);
 
