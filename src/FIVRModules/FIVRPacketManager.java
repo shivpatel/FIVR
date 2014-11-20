@@ -103,9 +103,20 @@ public class FIVRPacketManager
         FIVRPacket fivrPacket = null;
         ByteArrayInputStream bis = null;
         ObjectInputStream ois = null;
+
+        int length = datagram.getLength();
+        byte[] datagramData = datagram.getData();
+        byte[] data = new byte[length];
+        
+        for(int i = 0; i < length; i++)//gets data we care about, removing any trailing zeros from the datagram
+        {
+        	data[i] = datagramData[i];
+        }
+        
+        
         try 
         {
-            bis = new ByteArrayInputStream(datagram.getData());
+            bis = new ByteArrayInputStream(data);
             ois = new ObjectInputStream(bis);
             fivrPacket = (FIVRPacket) ois.readObject();
         } 

@@ -6,7 +6,7 @@ import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
-public class FIVRPacket implements Serializable
+public class FIVRPacket implements Comparable<FIVRPacket>, Serializable
 {
 	/**
 	 * 
@@ -21,6 +21,11 @@ public class FIVRPacket implements Serializable
 		this.payload = payload;
 	}
 	
+	/**
+	 * Converts FIVRPacket to a byte array
+	 * @return Byte array representation of this FIVRPacket
+	 * @throws IOException
+	 */
 	public byte[] getBytes() throws IOException
 	{
 		ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -54,5 +59,11 @@ public class FIVRPacket implements Serializable
 		  }
 		}
 		return bytes;
+	}
+
+	@Override
+	public int compareTo(FIVRPacket packet) 
+	{
+		return (this.header.seqNum - packet.header.seqNum);
 	}
 }

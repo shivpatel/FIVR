@@ -13,7 +13,21 @@ public class Test
 		FIVRPacket inputFIVRPacket = packets.get(1);
 		byte[] bytes = inputFIVRPacket.getBytes();
 		
-		DatagramPacket packet = new DatagramPacket(bytes, bytes.length);
+		byte[] fullBytes = new byte[bytes.length + 150];
+		//artificially add some zeros at the end like it would be in socket.receive()
+		for(int i = 0; i < bytes.length + 150; i++)
+		{
+			if(i < bytes.length)
+			{
+				fullBytes[i] = bytes[i];
+			}
+			else
+			{
+				fullBytes[i] = 0;
+			}
+		}
+		
+		DatagramPacket packet = new DatagramPacket(fullBytes, fullBytes.length);
 		
 		FIVRPacket outputFIVRPacket = FIVRPacketManager.depacketize(packet);
 		
