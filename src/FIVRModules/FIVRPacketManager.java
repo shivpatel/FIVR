@@ -43,11 +43,7 @@ public class FIVRPacketManager
 		
 		//Create "new file open bracket" packet. Put file name in this packet payload
 		FIVRHeader openHeader = new FIVRHeader(sourcePort, destinationPort, seqNum, 0, 0, window, 0, 0, 0, 0, 0, packetsForNextSet, isDownload, 1, 0);
-		
-		byte[] filenameBytes = file.getName().getBytes("UTF-8");
-		
-		FIVRPacket openPacket = new FIVRPacket(openHeader, filenameBytes);
-		openPacket.header.setChecksum(FIVRChecksum.generateChecksum(openPacket.getBytes(false)));
+		FIVRPacket openPacket = new FIVRPacket(openHeader, null);
 		seqNum += 1;
 		
 		packets.add(openPacket); 
@@ -85,11 +81,22 @@ public class FIVRPacketManager
 		
 		//Create "file closing bracket" packet
 		FIVRHeader closeHeader = new FIVRHeader(sourcePort, destinationPort, seqNum, 0, 0, window, 0, 0, 0, 0, 0, packetsForNextSet, isDownload, 0, 1);
-		FIVRPacket closePacket = new FIVRPacket(closeHeader, null);//no payload
+		
+		byte[] filenameBytes = file.getName().getBytes("UTF-8");
+		
+		FIVRPacket closePacket = new FIVRPacket(closeHeader, filenameBytes);//add filename to the payload
 		closePacket.header.setChecksum(FIVRChecksum.generateChecksum(closePacket.getBytes(false)));
 		seqNum += 1;
 		
 		packets.add(closePacket);
+		
+		//go back and add the total number of packets (including open and close bracket packets) used to make this file into the open bracket packet's payload
+		ByteBuffer buff = ByteBuffer.allocate(4);
+		buff.order(ByteOrder.LITTLE_ENDIAN);
+		buff.putInt(packets.size());
+		
+		packets.get(0).payload = buff.array();
+		openPacket.header.setChecksum(FIVRChecksum.generateChecksum(openPacket.getBytes(false)));
 		
 		return packets;
 	}

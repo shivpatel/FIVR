@@ -4,6 +4,8 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.DatagramPacket;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 
 public class Test 
@@ -12,6 +14,11 @@ public class Test
 	{
 		ArrayList<FIVRPacket> packets = FIVRPacketManager.packetize("Lenna.png", 1234, 1235, 0, 512, 10, 0, 0);
 		
+		ByteBuffer buff = ByteBuffer.allocate(4);
+		buff.order(ByteOrder.LITTLE_ENDIAN);
+		buff.put(packets.get(0).payload);
+		buff.position(0);
+		int numOfPackets = buff.getInt();
 		
 		
 		/*byte[] fullBytes = new byte[bytes.length + 150];
@@ -58,7 +65,7 @@ public class Test
 			lenna[i] = lennaBytes.get(i);
 		}
 		
-		String filename = new String(outputPackets.get(0).payload, "UTF-8");//get filename out of open bracket packet
+		String filename = new String(outputPackets.get(outputPackets.size()-1).payload, "UTF-8");//get filename out of open bracket packet
 		filename = "automatic " + filename;
 		
 		FIVRFile.writeBytesToFile(filename, lenna);
