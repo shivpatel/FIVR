@@ -41,9 +41,12 @@ public class FIVRPacketManager
 		
 		int seqNum = startingSequenceNumber;
 		
-		//Create "new file open bracket" packet
+		//Create "new file open bracket" packet. Put file name in this packet payload
 		FIVRHeader openHeader = new FIVRHeader(sourcePort, destinationPort, seqNum, -1, 0, window, 0, 0, 0, 0, 0, packetsForNextSet, isDownload, 1, 0);
-		FIVRPacket openPacket = new FIVRPacket(openHeader, null);//no payload
+		
+		byte[] filenameBytes = file.getName().getBytes("UTF-8");
+		
+		FIVRPacket openPacket = new FIVRPacket(openHeader, filenameBytes);
 		openPacket.header.setChecksum(FIVRChecksum.generateChecksum(openPacket.getBytes(false)));
 		seqNum += 1;
 		

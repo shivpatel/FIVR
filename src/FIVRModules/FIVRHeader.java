@@ -28,7 +28,7 @@ public class FIVRHeader implements Serializable
 	public int fileClosingBracket;
 	
 	/**
-	 * Header data lines format
+	 * Header data lines format (24 bytes total)
 	 * 
 	 * 		-------------------------------------------------------------
 	 *line1	|	Source Port (16 bits)	|	Destination Port (16 bits)	|
@@ -132,11 +132,6 @@ public class FIVRHeader implements Serializable
 		this.sendToRecvAck = line6 >>> 28;
 		this.recvToSendAck = line6 >>> 27;
 		this.packetsForNextSet = line6 & 0x07FFFFFF;
-	}
-	
-	public FIVRHeader()
-	{
-		
 	}
 	
 	public void setChecksum(int checksum)
