@@ -3,6 +3,8 @@ package FIVRServer;
 import java.io.*;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 
 import FIVRModules.*;
@@ -42,14 +44,15 @@ public class ServiceHandler implements Runnable {
 					if (Server.initializeState == true) {
 						// do initialization for server
 						socket = new DatagramSocket(Server.serverPort);
+						socket.setSoTimeout(0);
 						logOutput = "Server is ready...";
 						Server.initializeState = false;
 					} else {
 						// continue normal operation
 						DatagramPacket packet = new DatagramPacket(
 								new byte[PACKET_SIZE], PACKET_SIZE);
+						socket.setSoTimeout(0);
 						socket.receive(packet); // receiving packet
-
 						FIVRPacket pkt = FIVRPacketManager.depacketize(packet);
 						if (pkt.header.connectRequest == 1) {
 							System.out
@@ -121,74 +124,107 @@ public class ServiceHandler implements Runnable {
 	}
 
 	public void handleUploadRequset(FIVRPacket packet, DatagramPacket datagram) {
-
-		System.out.println("Client sending file to server...");
-		FIVRPacket current = null;
-		ArrayList<FIVRPacket> filePackets = new ArrayList<FIVRPacket>();
-		DatagramPacket tmpPacket = new DatagramPacket(new byte[PACKET_SIZE], PACKET_SIZE);
-		int remote_window_size = packet.header.windowSize;
-		int remote_seq_start_num = packet.header.seqNum;
-		int isLastPacket = 0;
-
-		System.out.println("Remote window size is: " + remote_window_size);
-		while (isLastPacket == 0) {
-			try {
-				
-				FIVRBuffer tmp = new FIVRBuffer(remote_window_size,
-						remote_seq_start_num);
-				
-				while (!tmp.isFull()) {
-					socket.receive(tmpPacket);
-					current = FIVRPacketManager.depacketize(tmpPacket);
-					isLastPacket = current.header.fileClosingBracket;
-					boolean wasAdded = tmp.addPacket(current);
-					if (!wasAdded) {
-						System.out.println("NACK response sent.");
-						// send NACK
-						FIVRHeader header = new FIVRHeader(Server.serverPort,
-								current.header.sourcePort, PACKET_SEQUENCE_NUM,
-								remote_seq_start_num + remote_window_size - 1, -1,
-								WINDOW_SIZE, 0, 0, 1, 0, 0,
-								WINDOW_SIZE, 0, 0, 0);
-						PACKET_SEQUENCE_NUM++;
-						FIVRPacket response = new FIVRPacket(header, new byte[0]);
-						DatagramPacket responseDG = new DatagramPacket(
-								response.getBytes(true), response.getBytes(true).length,
-								Server.host, response.header.destPort);
-						socket.send(responseDG);
-						
-					}
-					remote_window_size = current.header.windowSize;
-				}
-
-				System.out.println("ACK response sent.");
-				// SEND ACK (remote_seq_start_num + remote_window_size - 1)
-				FIVRHeader header = new FIVRHeader(Server.serverPort,
-						current.header.sourcePort, PACKET_SEQUENCE_NUM,
-						remote_seq_start_num + remote_window_size - 1, -1,
-						WINDOW_SIZE, 0, 0, 0, 0, 0,
-						WINDOW_SIZE, 0, 0, 0);
-				PACKET_SEQUENCE_NUM++;
-				FIVRPacket response = new FIVRPacket(header, new byte[0]);
-				DatagramPacket responseDG = new DatagramPacket(
-						response.getBytes(true), response.getBytes(true).length,
-						Server.host, response.header.destPort);
-				socket.send(responseDG);
-
-				remote_seq_start_num = remote_seq_start_num
-						+ remote_window_size - 1;
-				
-				filePackets.addAll(tmp.getBuffer());
-
-			} catch (Exception e) {
-				System.out
-						.println("Error processing packet: " + e.getMessage());
-				e.printStackTrace();
+		
+		ArrayList<FIVRPacket> data = FIVRTransactionManager.receiveAllPackets(socket, packet);
+		
+		if (data == null) {
+			System.out.println("Did not receive file");
+			return;
+		}
+		
+		int bytesNeeded = 0;
+		for (int i = 0; i < data.size(); i++) {
+			bytesNeeded += data.get(i).payload.length;
+		}
+		
+		byte[] fileData = new byte[bytesNeeded];
+		int index = 0;
+		for (int i = 0; i < data.size(); i++) {
+			for (int j = 0; j < data.get(i).payload.length; j++) {
+				fileData[index] = data.get(i).payload[j];
+				index++;
 			}
 		}
 		
-		System.out.println("File uploaded from client at"
-				+ datagram.getSocketAddress());
+		try {
+			String name = "server-" + FIVRTransactionManager.getLastReceivedFilename().trim();
+			System.out.println("The file will be stored as " + name);
+			Files.write(Paths.get(name), fileData);
+//			FileOutputStream fos = new FileOutputStream(name);
+//			fos.write(fileData);
+//			fos.close();
+		} catch (Exception e) {
+			System.out.println("Could not save file locally on server; local error.");
+			e.printStackTrace();
+		}
+
+//		System.out.println("Client sending file to server...");
+//		FIVRPacket current = null;
+//		ArrayList<FIVRPacket> filePackets = new ArrayList<FIVRPacket>();
+//		DatagramPacket tmpPacket = new DatagramPacket(new byte[PACKET_SIZE], PACKET_SIZE);
+//		int remote_window_size = packet.header.windowSize;
+//		int remote_seq_start_num = packet.header.seqNum;
+//		int isLastPacket = 0;
+//
+//		System.out.println("Remote window size is: " + remote_window_size);
+//		while (isLastPacket == 0) {
+//			try {
+//				
+//				FIVRBuffer tmp = new FIVRBuffer(remote_window_size,
+//						remote_seq_start_num);
+//				
+//				while (!tmp.isFull()) {
+//					socket.receive(tmpPacket);
+//					current = FIVRPacketManager.depacketize(tmpPacket);
+//					isLastPacket = current.header.fileClosingBracket;
+//					boolean wasAdded = tmp.addPacket(current);
+//					if (!wasAdded) {
+//						System.out.println("NACK response sent.");
+//						// send NACK
+//						FIVRHeader header = new FIVRHeader(Server.serverPort,
+//								current.header.sourcePort, PACKET_SEQUENCE_NUM,
+//								remote_seq_start_num + remote_window_size - 1, -1,
+//								WINDOW_SIZE, 0, 0, 1, 0, 0,
+//								WINDOW_SIZE, 0, 0, 0);
+//						PACKET_SEQUENCE_NUM++;
+//						FIVRPacket response = new FIVRPacket(header, new byte[0]);
+//						DatagramPacket responseDG = new DatagramPacket(
+//								response.getBytes(true), response.getBytes(true).length,
+//								Server.host, response.header.destPort);
+//						socket.send(responseDG);
+//						
+//					}
+//					remote_window_size = current.header.windowSize;
+//				}
+//
+//				System.out.println("ACK response sent.");
+//				// SEND ACK (remote_seq_start_num + remote_window_size - 1)
+//				FIVRHeader header = new FIVRHeader(Server.serverPort,
+//						current.header.sourcePort, PACKET_SEQUENCE_NUM,
+//						remote_seq_start_num + remote_window_size - 1, -1,
+//						WINDOW_SIZE, 0, 0, 0, 0, 0,
+//						WINDOW_SIZE, 0, 0, 0);
+//				PACKET_SEQUENCE_NUM++;
+//				FIVRPacket response = new FIVRPacket(header, new byte[0]);
+//				DatagramPacket responseDG = new DatagramPacket(
+//						response.getBytes(true), response.getBytes(true).length,
+//						Server.host, response.header.destPort);
+//				socket.send(responseDG);
+//
+//				remote_seq_start_num = remote_seq_start_num
+//						+ remote_window_size - 1;
+//				
+//				filePackets.addAll(tmp.getBuffer());
+//
+//			} catch (Exception e) {
+//				System.out
+//						.println("Error processing packet: " + e.getMessage());
+//				e.printStackTrace();
+//			}
+//		}
+//		
+//		System.out.println("File uploaded from client at"
+//				+ datagram.getSocketAddress());
 
 	}
 
