@@ -107,24 +107,26 @@ public class FIVRTransactionManager {
 	 */
 	public static int sendAllPackets(String filename, DatagramSocket socket, InetAddress sendToHost, int sendToPort, int seqNum) {
 		try {
-			
 			// FIVR Rules Initialization
 			int window_size = 5;
 			int segment_size = 512;
 			int threshold = 25;
 			int rtt_timeout = 1000;
-			
 			// Send Session Initialization
-			ArrayList<FIVRPacket> toSend = FIVRPacketManager.packetize(filename,socket.getLocalPort(),sendToPort,seqNum,segment_size,window_size,window_size,0);
+			ArrayList<FIVRPacket> toSend = null;
+			try {
+				toSend = FIVRPacketManager.packetize(filename.trim(),socket.getLocalPort(),sendToPort,seqNum,segment_size,window_size,window_size,0);
+			} catch (Exception e) {
+				return -1;
+			}
 			int i = 0;
 			int timeout_attempts = 0;
 			DatagramPacket datagram = null;
 			FIVRPacket packet = null;
-			
 			// Initial open bracket packet should have # packets in entire file batch as String in body
 			toSend.get(i).payload = (new String("" + toSend.size())).getBytes();
 			toSend.get(toSend.size()-1).payload = (filename.getBytes());
-			
+			System.out.println("Got here 4.");
 			// Send open bracket packet by itself at first
 			boolean sentOpenBracketPacket = false;
 			while (!sentOpenBracketPacket) {
@@ -133,7 +135,7 @@ public class FIVRTransactionManager {
 					packet = toSend.get(i);
 					datagram = new DatagramPacket(packet.getBytes(true),packet.getBytes(true).length,sendToHost,sendToPort);
 					socket.send(datagram);
-					// System.out.println("Packet #" + (seqNum + i) + " sent.");	
+					System.out.println("Packet #" + (seqNum + i) + " sent.");	
 					i++;
 					timeout_attempts = 0;
 					sentOpenBracketPacket = true;
