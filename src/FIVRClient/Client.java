@@ -92,9 +92,7 @@ public class Client {
 		try {
 			host = InetAddress.getByName(ip);
 			port = Integer.parseInt(prt);
-
-			port = Integer.parseInt(clntPrt) + 1; // comment out if using emulator
-
+			// port = Integer.parseInt(clntPrt) + 1; // comment out if using emulator
 			clientPort = Integer.parseInt(clntPrt);
 			socket = new DatagramSocket(clientPort);
 			System.out.println("Remote host settings add. Type connect to establish a connection.");
@@ -224,7 +222,7 @@ public class Client {
 			too_many_tries++;
 		}
 		
-		ArrayList<FIVRPacket> data = FIVRTransactionManager.receiveAllPackets(socket, fPacket);
+		ArrayList<FIVRPacket> data = FIVRTransactionManager.receiveAllPackets(socket, fPacket, host, port);
 		if (data == null) {
 			System.out.println("Did not receive file");
 			return false;

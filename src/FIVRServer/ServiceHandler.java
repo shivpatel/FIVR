@@ -101,7 +101,7 @@ public class ServiceHandler implements Runnable {
 
 	public void handleUploadRequset(FIVRPacket packet, DatagramPacket datagram) {
 		
-		ArrayList<FIVRPacket> data = FIVRTransactionManager.receiveAllPackets(socket, packet);
+		ArrayList<FIVRPacket> data = FIVRTransactionManager.receiveAllPackets(socket, packet, Server.host, Server.emulatorPort);
 		
 		if (data == null) {
 			System.out.println("Did not receive file");
@@ -136,7 +136,7 @@ public class ServiceHandler implements Runnable {
 	public void handleDownloadRequset(FIVRPacket packet, DatagramPacket datagram) {
 		String filename = new String(packet.payload);
 		System.out.println("Request to download " + filename);
-		int result = FIVRTransactionManager.sendAllPackets(filename,socket,datagram.getAddress(),packet.header.sourcePort,PACKET_SEQUENCE_NUM);
+		int result = FIVRTransactionManager.sendAllPackets(filename,socket,Server.host,Server.emulatorPort,PACKET_SEQUENCE_NUM);
 		if (result == -1) {
 			System.out.println("Failed to send file.");
 		} else {

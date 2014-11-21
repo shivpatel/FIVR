@@ -40,7 +40,7 @@ public class InputHandler implements Runnable {
 					Server.serverPort = Integer.parseInt(args[1]);
 					Server.host = InetAddress.getByName(args[2]);
 					Server.emulatorPort = Integer.parseInt(args[3]);
-					Server.emulatorPort = Server.serverPort-1; // COMMENT OUT IF TESTING WITH EMULATOR
+					// Server.emulatorPort = Server.serverPort-1; // COMMENT OUT IF TESTING WITH EMULATOR
 				} catch (NumberFormatException | UnknownHostException e) {
 					System.out.println("Invalid arguments");
 				}

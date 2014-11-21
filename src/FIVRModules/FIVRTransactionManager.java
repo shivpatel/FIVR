@@ -22,12 +22,12 @@ public class FIVRTransactionManager {
 	}
 
 	/**
-	 * Return byte array of all data received for transaction; returns null if error. Method assumes you've already viewed the open bracket packet.
+	 * Return FIVRPacket array list for transaction; returns null if error. Method assumes you've already got the open bracket packet.
 	 * @param socket Socket to receive all packets on
 	 * @param packet Initial open bracket packet
 	 * @return
 	 */
-	public static ArrayList<FIVRPacket> receiveAllPackets(DatagramSocket socket, FIVRPacket packet) {
+	public static ArrayList<FIVRPacket> receiveAllPackets(DatagramSocket socket, FIVRPacket packet, InetAddress sendToHost, int sendToPort) {
 		ArrayList<FIVRPacket> data = new ArrayList<FIVRPacket>();
 		try {
 			
@@ -70,7 +70,7 @@ public class FIVRTransactionManager {
 						}
 						if(!buffer.addPacket(packet)) {
 							// send NACK
-							sendAckNackResponse(socket,datagram.getAddress(),packet.header.sourcePort,-1,-1,true);
+							sendAckNackResponse(socket,sendToHost,sendToPort,-1,-1,true);
 							// System.out.println("Sending a NACK.");
 							// System.out.println("Packets to go is: " + packets_to_go + " and buffer size is: " + buffer_size);
 							// System.out.println("Looking for packets in range of: " + (prev_seq_num+1) + " to " + (prev_seq_num+1+buffer_size));
@@ -81,7 +81,7 @@ public class FIVRTransactionManager {
 					}
 				}
 				// System.out.println("Sending an ACK for " + (prev_seq_num+current_window_size+1));
-				sendAckNackResponse(socket,datagram.getAddress(),packet.header.sourcePort,-1,prev_seq_num+current_window_size+1,false);
+				sendAckNackResponse(socket,sendToHost,sendToPort,-1,prev_seq_num+current_window_size+1,false);
 				timeout_attempts = 0;
 				prev_seq_num = prev_seq_num + current_window_size;
 				packets_to_go = packets_to_go - buffer_size;
