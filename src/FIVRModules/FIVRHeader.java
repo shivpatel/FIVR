@@ -117,20 +117,20 @@ public class FIVRHeader implements Serializable
 		this.line5 = line5;
 		this.line6 = line6;
 		
-		this.sourcePort = line1 >>> 16;
+		this.sourcePort = (line1 >>> 16) & 0x0000FFFF;
 		this.destPort = line1 & 0x0000FFFF;
 		this.seqNum = line2;
 		this.ack = line3;
 		this.checksum = line4;
-		this.isDownload = line5 >>> 31;
-		this.fileOpenBracket = line5 >>> 30;
-		this.fileClosingBracket = line5 >>> 29;
+		this.isDownload = (line5 >>> 31) & 0x00000001;
+		this.fileOpenBracket = (line5 >>> 30) & 0x00000001;
+		this.fileClosingBracket = line5 >>> 29 & 0x00000001;
 		this.windowSize = line5 & 0x0000FFFF;
-		this.connectRequest = line6 >>> 31;
-		this.terminateRequest = line6 >>> 30;
-		this.isNACK = line6 >>> 29;
-		this.sendToRecvAck = line6 >>> 28;
-		this.recvToSendAck = line6 >>> 27;
+		this.connectRequest = (line6 >>> 31) & 0x00000001;
+		this.terminateRequest = (line6 >>> 30) & 0x00000001;
+		this.isNACK = (line6 >>> 29) & 0x00000001;
+		this.sendToRecvAck = (line6 >>> 28) & 0x00000001;
+		this.recvToSendAck = (line6 >>> 27) & 0x00000001;
 		this.packetsForNextSet = line6 & 0x07FFFFFF;
 	}
 	

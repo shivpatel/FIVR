@@ -40,6 +40,8 @@ public class Test
 			outputPackets.add(outputFIVRPacket);
 		}
 		
+		FIVRPacket closingPacket = outputPackets.get(outputPackets.size()-1);
+		
 		ArrayList<Byte> lennaBytes = new ArrayList<Byte>();
 		for(int i = 1; i < outputPackets.size() -1; i++)
 		{
@@ -56,9 +58,12 @@ public class Test
 			lenna[i] = lennaBytes.get(i);
 		}
 		
-		FIVRFile.writeBytesToFile("lenna depacketized.png", lenna);
+		String filename = new String(outputPackets.get(0).payload, "UTF-8");//get filename out of open bracket packet
+		filename = "automatic " + filename;
 		
-		FIVRBuffer buffer = new FIVRBuffer(10, 1);
+		FIVRFile.writeBytesToFile(filename, lenna);
+		
+		FIVRBuffer buffer = new FIVRBuffer(10, 0);
 		
 		buffer.addPacket(outputPackets.get(2));
 		buffer.addPacket(outputPackets.get(2));
