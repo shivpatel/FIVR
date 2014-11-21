@@ -10,6 +10,7 @@ import FIVRServer.Server;
 public class FIVRTransactionManager {
 	
 	private static String last_received_filename = "";
+	public static int max_tries = 25;
 	
 	/**
 	 * Returns last filename detected from receiveAllPackets function. Erases values after being called.
@@ -56,7 +57,7 @@ public class FIVRTransactionManager {
 				if (packets_to_go < current_window_size) buffer_size = packets_to_go;
 				FIVRBuffer buffer = new FIVRBuffer(buffer_size,prev_seq_num+1);
 				while (!buffer.isFull()) {
-					if (timeout_attempts > 10) throw new Exception("Could not receive anymore packets.");
+					if (timeout_attempts > max_tries) throw new Exception("Could not receive anymore packets.");
 					try {
 						datagram = new DatagramPacket(new byte[segment_size], segment_size);
 						socket.receive(datagram);
@@ -76,11 +77,10 @@ public class FIVRTransactionManager {
 							// System.out.println("Looking for packets in range of: " + (prev_seq_num+1) + " to " + (prev_seq_num+1+buffer_size));
 						}
 					} catch (Exception e) {
-						e.printStackTrace();
 						timeout_attempts++;
 					}
 				}
-				// System.out.println("Sending an ACK for " + (prev_seq_num+current_window_size+1));
+				System.out.println("Sending an ACK for " + (prev_seq_num+current_window_size+1));
 				sendAckNackResponse(socket,sendToHost,sendToPort,-1,prev_seq_num+current_window_size+1,false);
 				timeout_attempts = 0;
 				prev_seq_num = prev_seq_num + current_window_size;
@@ -89,7 +89,6 @@ public class FIVRTransactionManager {
 			}
 			
 		} catch (Exception e) {
-			e.printStackTrace();
 			return null;
 		}
 		System.out.println("File (" + last_received_filename + ") successfully received.");
@@ -126,16 +125,16 @@ public class FIVRTransactionManager {
 			// Initial open bracket packet should have # packets in entire file batch as String in body
 			toSend.get(i).payload = (new String("" + toSend.size())).getBytes();
 			toSend.get(toSend.size()-1).payload = (filename.getBytes());
-			System.out.println("Got here 4.");
+			
 			// Send open bracket packet by itself at first
 			boolean sentOpenBracketPacket = false;
 			while (!sentOpenBracketPacket) {
-				if (timeout_attempts >= 10) return -1;
+				if (timeout_attempts >= max_tries) return -1;
 				try {
 					packet = toSend.get(i);
 					datagram = new DatagramPacket(packet.getBytes(true),packet.getBytes(true).length,sendToHost,sendToPort);
 					socket.send(datagram);
-					System.out.println("Packet #" + (seqNum + i) + " sent.");	
+					// System.out.println("Packet #" + (seqNum + i) + " sent.");	
 					i++;
 					timeout_attempts = 0;
 					sentOpenBracketPacket = true;
@@ -149,7 +148,7 @@ public class FIVRTransactionManager {
 			while (i < toSend.size()) {
 				
 				// check timeout attempts
-				if (timeout_attempts >= 10) return -1;
+				if (timeout_attempts >= max_tries) return -1;
 				
 				// send set of packets
 				for (int j = 0; j < window_size; j++) {

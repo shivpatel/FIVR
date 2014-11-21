@@ -75,7 +75,6 @@ public class ServiceHandler implements Runnable {
 			}
 		} catch (Exception e) {
 			System.out.println("Error: " + e);
-			e.printStackTrace();
 		}
 	}
 
@@ -128,7 +127,6 @@ public class ServiceHandler implements Runnable {
 			Files.write(Paths.get(name), fileData);
 		} catch (Exception e) {
 			System.out.println("Could not save file locally on server; local error.");
-			e.printStackTrace();
 		}
 
 	}

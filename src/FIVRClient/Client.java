@@ -113,37 +113,33 @@ public class Client {
 					0, 0, 0, WINDOW_SIZE, 0, 0, 0);
 			PACKET_SEQUENCE_NUM++;
 			FIVRPacket requestPacket = new FIVRPacket(header, new byte[0]);
-			DatagramPacket packet = new DatagramPacket(
+			DatagramPacket packet2 = new DatagramPacket(
 					requestPacket.getBytes(true), requestPacket.getBytes(true).length,
 					host, port);
-			socket.send(packet);
-
-			// 2. client waits for server to respond
-			socket.setSoTimeout(RTT_TIMEOUT);
-			packet = new DatagramPacket(new byte[PACKET_SIZE], PACKET_SIZE, host, port);
-			FIVRPacket response = null;
 
 			boolean gotResponse = false;
 			int tries = 0;
 
 			while (!gotResponse) {
 				try {
-					if (tries > 10) {
+					if (tries > FIVRTransactionManager.max_tries) {
 						System.out.println("Tried to connect to server, but no luck.");
 						return;
 					}
+					socket.send(packet2);
+					socket.setSoTimeout(RTT_TIMEOUT);
+					DatagramPacket packet = new DatagramPacket(new byte[PACKET_SIZE], PACKET_SIZE, host, port);
 					socket.receive(packet);
-					gotResponse = true;
+					FIVRPacket a = FIVRPacketManager.depacketize(packet);
+					if (a.header.recvToSendAck == 0) {
+						tries++;
+					} else {
+						gotResponse = true;
+						tries = 0;
+					}
 				} catch (Exception e) {
 					tries++;
 				}
-			}
-
-			// 3. client verifies that he is still here and ready
-			FIVRPacket a = FIVRPacketManager.depacketize(packet);
-			if (a.header.recvToSendAck == 0) {
-				System.out.println("Could not connect to server.");
-				return;
 			}
 
 			connected = true;
@@ -152,7 +148,6 @@ public class Client {
 
 		} catch (Exception e) {
 			System.out.println("Could not connect to server. Error: " + e.getMessage());
-			e.printStackTrace();
 			return;
 		}
 	}
@@ -209,7 +204,7 @@ public class Client {
 		FIVRPacket fPacket = null;
 		while (!gotOpenBracketPacket) {
 			try {
-				if (too_many_tries > 25) {
+				if (too_many_tries > FIVRTransactionManager.max_tries) {
 					System.out.println("Could not get that file. Error: Request response never received.");
 					return false;
 				}
@@ -248,7 +243,6 @@ public class Client {
 			Files.write(Paths.get(name), fileData);
 		} catch (Exception e) {
 			System.out.println("Could not save file locally on client; local error.");
-			e.printStackTrace();
 			return false;
 		}
 		

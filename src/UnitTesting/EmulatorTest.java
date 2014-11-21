@@ -10,8 +10,8 @@ public class EmulatorTest {
 	public static void main(String[] args) throws IOException {
 		
 		String txt = "Hello World!";
-		String emulator_ip = "143.215.129.100";
-		int emulator_port = 7000;
+		String emulator_ip = "127.0.0.1";
+		int emulator_port = 8000;
 		int client_port = 9956;
 		int server_port = 9957;
 		int timeout = 5000;
