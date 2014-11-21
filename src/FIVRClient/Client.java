@@ -171,6 +171,7 @@ public class Client {
 			System.out.println("Needs to be connected before disconnecting.");
 			return;
 		}
+		connected = false;
 		socket.close();
 		System.out.println("Connection closed.");
 	}
