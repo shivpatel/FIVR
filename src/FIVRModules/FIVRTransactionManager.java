@@ -47,6 +47,7 @@ public class FIVRTransactionManager {
 			String tmp = new String(packet.payload) + "";
 			packets_to_go = Integer.parseInt(tmp.trim());
 			int total_packets_count = packets_to_go;
+			int first_packet_seq_num = packet.header.seqNum;
 			// System.out.println("Total Packets: " + total_packets_count);
 			packets_to_go--;
 			prev_seq_num = packet.header.seqNum;
@@ -64,7 +65,7 @@ public class FIVRTransactionManager {
 						socket.setSoTimeout(rtt_timeout);
 						packet = FIVRPacketManager.depacketize(datagram);
 						// System.out.println("Packet's # is "+ packet.header.seqNum);
-						if(total_packets_count == packet.header.seqNum) {
+						if((total_packets_count+first_packet_seq_num-1) == packet.header.seqNum) {
 							packets_to_go--;
 							last_received_filename = new String(packet.payload);
 							break;
@@ -156,11 +157,11 @@ public class FIVRTransactionManager {
 						packet = toSend.get(i);
 						datagram = new DatagramPacket(packet.getBytes(true),packet.getBytes(true).length,sendToHost,sendToPort);
 						socket.send(datagram);
+						i++;
 						// System.out.println("Packet #" + (seqNum + i) + " sent.");	 
 					} catch (Exception e) {
 						// failed to send packet
 					}
-					i++;
 				}
 				
 				try {
@@ -171,11 +172,13 @@ public class FIVRTransactionManager {
 					packet = FIVRPacketManager.depacketize(datagram);
 					
 					// analyze response 
-					if (packet.header.isNACK == 1 || packet.header.ack != (seqNum+i)) {
+					//if (packet.header.isNACK == 1 || packet.header.ack != (seqNum+i)) {
+					if (packet.header.isNACK == 1) {
 						i = i - window_size;
 						threshold = (threshold / 2) + 1;
 						//window_size = threshold;
 					} else {
+						i = packet.header.ack - seqNum;
 						timeout_attempts = 0;
 						if (window_size < threshold) {
 							//window_size = (window_size * window_size) / 2;
