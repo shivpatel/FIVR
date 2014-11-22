@@ -34,13 +34,12 @@ public class InputHandler implements Runnable {
 		String[] args = statement.split(" ");
 
 		if (args.length > 0) {
-			// COMMAND > start [port]
+			
 			if (args[0].equalsIgnoreCase("fta-server") && args.length >= 3) {
 				try {
 					Server.serverPort = Integer.parseInt(args[1]);
 					Server.host = InetAddress.getByName(args[2]);
 					Server.emulatorPort = Integer.parseInt(args[3]);
-					// Server.emulatorPort = Server.serverPort-1; // COMMENT OUT IF TESTING WITH EMULATOR
 				} catch (NumberFormatException | UnknownHostException e) {
 					System.out.println("Invalid arguments");
 				}
@@ -49,30 +48,32 @@ public class InputHandler implements Runnable {
 				return;
 			}
 
-			// COMMAND > window [size]
 			if (args[0].equalsIgnoreCase("window") && args.length >= 2) {
 				try {
 					Server.windowSize = Integer.parseInt(args[1]);
+					Server.log("Window size changed to: " + Server.windowSize,true);
 				} catch (NumberFormatException e) {
 					System.out.println("Invalid arguments");
 				}
 				return;
 			}
 
-			// COMMAND > debug [true/false]
-			if (args[0].equalsIgnoreCase("debug") && args.length >= 2) {
+			if (args[0].equalsIgnoreCase("log") && args.length >= 2) {
 				try {
 					Server.enableLog = Boolean.parseBoolean(args[1]);
+					if (Server.enableLog) Server.log("Logs enabled",true);
+					if (!Server.enableLog) Server.log("Logs disabled",true);
 				} catch (Exception e) {
 					System.out.println("Invalid arguments");
 				}
 				return;
 			}
 
-			// COMMAND > stop
 			if (args[0].equalsIgnoreCase("terminate")) {
 				Server.started = false;
-				// stop the server
+				Server.initializeState = true;
+				ServiceHandler.socket.close();
+				Server.log("Server terminated.",true);
 				return;
 			}
 

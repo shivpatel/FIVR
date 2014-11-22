@@ -39,7 +39,7 @@ public class FIVRTransactionManager {
 			int timeout_attempts = 0;
 			int packets_to_go = 0;
 			int prev_seq_num = 0;
-			int rtt_timeout = 2000;
+			int rtt_timeout = 200;
 			DatagramPacket datagram = new DatagramPacket(new byte[segment_size], segment_size);
 
 			timeout_attempts = 0;
@@ -110,7 +110,7 @@ public class FIVRTransactionManager {
 			int window_size = 5;
 			int segment_size = 512;
 			int threshold = 25;
-			int rtt_timeout = 1000;
+			int rtt_timeout = 200;
 			// Send Session Initialization
 			ArrayList<FIVRPacket> toSend = null;
 			try {

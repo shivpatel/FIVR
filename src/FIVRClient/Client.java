@@ -24,7 +24,7 @@ public class Client {
 	public static int WINDOW_SIZE = 5; // 5 packets per window
 	public static int PACKET_SIZE = 512; // 512 bytes
 	public static int BUFFER_SIZE = 1000; // 1000 bytes
-	public static int RTT_TIMEOUT = 2000; // 2 sec.
+	public static int RTT_TIMEOUT = 200; // 2 sec.
 	public static int CONNECTION_TIMEOUT = 30000; // 30 sec.
 	public static int PACKET_SEQUENCE_NUM = 0;
 
@@ -94,8 +94,7 @@ public class Client {
 			port = Integer.parseInt(prt);
 			// port = Integer.parseInt(clntPrt) + 1; // comment out if using emulator
 			clientPort = Integer.parseInt(clntPrt);
-			socket = new DatagramSocket(clientPort);
-			System.out.println("Remote host settings add. Type connect to establish a connection.");
+			System.out.println("Settings add. Type connect to establish a connection.");
 		} catch (Exception e) {
 			System.out.println("Error connecting: " + e);
 		}
@@ -107,10 +106,10 @@ public class Client {
 			return;
 		}
 		try {
-			// 1. client request to connect with server
+			socket = new DatagramSocket(clientPort);
 			FIVRHeader header = new FIVRHeader(clientPort, port,
-					PACKET_SEQUENCE_NUM, -1, -1, WINDOW_SIZE, 1, 0,
-					0, 0, 0, WINDOW_SIZE, 0, 0, 0);
+					PACKET_SEQUENCE_NUM, -1, -1, 1, 1, 0,
+					0, 0, 0, 1, 0, 0, 0);
 			PACKET_SEQUENCE_NUM++;
 			FIVRPacket requestPacket = new FIVRPacket(header, new byte[0]);
 			DatagramPacket packet2 = new DatagramPacket(
@@ -126,22 +125,17 @@ public class Client {
 						System.out.println("Tried to connect to server, but no luck.");
 						return;
 					}
-					socket.send(packet2);
 					socket.setSoTimeout(RTT_TIMEOUT);
+					socket.send(packet2);
 					DatagramPacket packet = new DatagramPacket(new byte[PACKET_SIZE], PACKET_SIZE, host, port);
 					socket.receive(packet);
-					FIVRPacket a = FIVRPacketManager.depacketize(packet);
-					if (a.header.recvToSendAck == 0) {
-						tries++;
-					} else {
+					if (FIVRPacketManager.depacketize(packet).header.recvToSendAck == 1) {
 						gotResponse = true;
-						tries = 0;
 					}
-				} catch (Exception e) {
-					tries++;
-				}
+				} catch (Exception e) {}
+				tries++;
 			}
-
+			
 			connected = true;
 			System.out.println("Connected to server!");
 			return;
@@ -154,6 +148,7 @@ public class Client {
 
 	public static void changeWindow(String size) {
 		WINDOW_SIZE = Integer.parseInt(size);
+		System.out.println("Window size changed to: " + WINDOW_SIZE);
 	}
 
 	/**
