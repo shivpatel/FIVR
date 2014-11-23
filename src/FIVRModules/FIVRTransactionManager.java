@@ -52,24 +52,33 @@ public class FIVRTransactionManager {
 			packets_to_go--;
 			prev_seq_num = packet.header.seqNum;
 			
+			// run until all packets received
 			while (packets_to_go > 0) {
+				
 				int current_window_size = packet.header.windowSize;
 				int buffer_size = current_window_size;
 				if (packets_to_go < current_window_size) buffer_size = packets_to_go;
 				FIVRBuffer buffer = new FIVRBuffer(buffer_size,prev_seq_num+1);
+				
+				// while buffer isn't full
 				while (!buffer.isFull()) {
+				
 					if (timeout_attempts > max_tries) throw new Exception("Could not receive anymore packets.");
+					
 					try {
+						
 						datagram = new DatagramPacket(new byte[segment_size], segment_size);
 						socket.receive(datagram);
 						socket.setSoTimeout(rtt_timeout);
 						packet = FIVRPacketManager.depacketize(datagram);
-						// System.out.println("Packet's # is "+ packet.header.seqNum);
+						
+						// determine if closed bracket packet received
 						if((total_packets_count+first_packet_seq_num-1) == packet.header.seqNum) {
 							packets_to_go--;
 							last_received_filename = new String(packet.payload);
 							break;
 						}
+						
 						if(!buffer.addPacket(packet)) {
 							// send NACK
 							sendAckNackResponse(socket,sendToHost,sendToPort,-1,-1,true);
@@ -77,15 +86,23 @@ public class FIVRTransactionManager {
 							// System.out.println("Packets to go is: " + packets_to_go + " and buffer size is: " + buffer_size);
 							// System.out.println("Looking for packets in range of: " + (prev_seq_num+1) + " to " + (prev_seq_num+1+buffer_size));
 						}
+						
 					} catch (Exception e) {
+						
 						timeout_attempts++;
+						
 					}
 				}
+				
+				// send ACK for set
 				System.out.println("Sending an ACK for " + (prev_seq_num+current_window_size+1));
 				sendAckNackResponse(socket,sendToHost,sendToPort,-1,prev_seq_num+current_window_size+1,false);
+				
 				timeout_attempts = 0;
 				prev_seq_num = prev_seq_num + current_window_size;
 				packets_to_go = packets_to_go - buffer_size;
+				
+				// add to return array
 				data.addAll(buffer.getBuffer());
 			}
 			
@@ -107,11 +124,13 @@ public class FIVRTransactionManager {
 	 */
 	public static int sendAllPackets(String filename, DatagramSocket socket, InetAddress sendToHost, int sendToPort, int seqNum) {
 		try {
+			
 			// FIVR Rules Initialization
 			int window_size = 5;
 			int segment_size = 512;
 			int threshold = 25;
 			int rtt_timeout = 200;
+			
 			// Send Session Initialization
 			ArrayList<FIVRPacket> toSend = null;
 			try {
@@ -123,6 +142,7 @@ public class FIVRTransactionManager {
 			int timeout_attempts = 0;
 			DatagramPacket datagram = null;
 			FIVRPacket packet = null;
+			
 			// Initial open bracket packet should have # packets in entire file batch as String in body
 			toSend.get(i).payload = (new String("" + toSend.size())).getBytes();
 			toSend.get(toSend.size()-1).payload = (filename.getBytes());
