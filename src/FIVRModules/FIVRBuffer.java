@@ -67,9 +67,12 @@ public class FIVRBuffer {
 			buffer.add(packet);
 			Collections.sort(buffer);// sorts packets in the buffer on sequence
 										// number
+			
+			return true;
 		}
 
-		return true;
+		return false;
+		
 	}
 
 	/**

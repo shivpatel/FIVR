@@ -10,7 +10,7 @@ import FIVRServer.Server;
 public class FIVRTransactionManager {
 	
 	private static String last_received_filename = "";
-	public static int max_tries = 25;
+	public static int max_tries = 100;
 	
 	/**
 	 * Returns last filename detected from receiveAllPackets function. Erases values after being called.
@@ -45,10 +45,10 @@ public class FIVRTransactionManager {
 				int result = buffer.addToBuffer(packet);
 				
 				if (result == 2) {
-					System.out.println("Sending an ACK  " + buffer.sendAckFor());
+					// System.out.println("Sending an ACK  " + buffer.sendAckFor());
 					sendAckNackResponse(socket,sendToHost,sendToPort,-1,buffer.sendAckFor(),false);
 				} else if (result == -1) {
-					System.out.println("Sending an NACK " + buffer.nextExpectedSeqNum());
+					// System.out.println("Sending an NACK " + buffer.nextExpectedSeqNum());
 					sendAckNackResponse(socket,sendToHost,sendToPort,-1,buffer.nextExpectedSeqNum(),true);
 				} else if (result == 1) {
 					// normal operations
@@ -121,6 +121,7 @@ public class FIVRTransactionManager {
 				for (int j = 0; j < window_size; j++) {
 					try {
 						packet = toSend.get(i);
+						// System.out.println("Sending packet: #" + packet.header.seqNum);
 						datagram = new DatagramPacket(packet.getBytes(true),packet.getBytes(true).length,sendToHost,sendToPort);
 						socket.send(datagram);
 						i++;
@@ -138,11 +139,11 @@ public class FIVRTransactionManager {
 												
 						try {
 							
-							System.out.println("isNack: " + packet.header.isNACK + " ACK Num: " + packet.header.ack);
+							// System.out.println("isNack: " + packet.header.isNACK + " ACK Num: " + packet.header.ack);
 							
 							// send desired NACK one
-							System.out.println("Sending packet: " + (packet.header.ack - seqNum + 1));
-							packet = toSend.get(packet.header.ack - seqNum + 1);
+							// System.out.println("Sending packet: " + (packet.header.ack - seqNum));
+							packet = toSend.get(packet.header.ack - seqNum);
 							datagram = new DatagramPacket(packet.getBytes(true),packet.getBytes(true).length,sendToHost,sendToPort);
 							socket.send(datagram);
 						
@@ -166,8 +167,6 @@ public class FIVRTransactionManager {
 			
 		} catch (Exception e) {
 			
-			System.out.println("FAILED D");
-			e.printStackTrace();
 			return -1;
 			
 		}

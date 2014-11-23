@@ -25,13 +25,15 @@ public class FIVRBufferManager {
 	}
 	
 	public int addToBuffer(FIVRPacket packet) throws IOException {
-		System.out.println("Wants to add: " + packet.header.seqNum);
+		//System.out.println("Wants to add: " + packet.header.seqNum);
+		//System.out.println("Count of packets before: " + tmpBuffer.getBuffer().size());
 		if (tmpBuffer.addPacket(packet)) { 
+			//System.out.println("Count of packets after: " + tmpBuffer.getBuffer().size());
 			if (tmpBuffer.isFull() || packet.header.fileClosingBracket == 1) {
 				all.addAll(tmpBuffer.getBuffer());
 				int next_start_seq_num = tmpBuffer.getBuffer().get(tmpBuffer.getBuffer().size()-1).header.seqNum + 1;
-				System.out.println("New packet window size: " + packet.header.windowSize);
-				System.out.println("Next expected seq num: " + next_start_seq_num);
+				//System.out.println("New packet window size: " + packet.header.windowSize);
+				//System.out.println("Next expected seq num: " + next_start_seq_num);
 				resetTempBuffer(packet.header.windowSize, next_start_seq_num); 
 				return 2;
 			}
