@@ -41,7 +41,6 @@ public class ServiceHandler implements Runnable {
 					if (Server.initializeState == true) {
 						// do initialization for server
 						socket = new DatagramSocket(Server.serverPort);
-						socket.setSoTimeout(200);
 						Server.log("Server is ready...",true);
 						Server.initializeState = false;
 					} else {
@@ -49,18 +48,17 @@ public class ServiceHandler implements Runnable {
 						try {
 							DatagramPacket packet = new DatagramPacket(
 									new byte[PACKET_SIZE], PACKET_SIZE);
-							socket.setSoTimeout(200);
 							socket.receive(packet); // receiving packet
 							FIVRPacket pkt = FIVRPacketManager.depacketize(packet);
 							if (pkt.header.connectRequest == 1) {
 								Server.log("Connection request packet arrived.");
 								handleConnectRequset(pkt, packet);
 							} else if (pkt.header.isDownload == 1) {
-								Server.log("Download file packet request arrived.");
+								Server.log("Download file packet request arrived.",true);
 								handleDownloadRequset(pkt, packet);
 							} else if (pkt.header.isDownload == 0
 									&& pkt.header.fileOpenBracket == 1) {
-								Server.log("Upload file packet request arrived.");
+								Server.log("Upload file packet request arrived.",true);
 								handleUploadRequset(pkt, packet);
 							} else if (pkt.header.fileOpenBracket == 1) {
 								Server.log("Open bracket packet arrived; unknown action next.");

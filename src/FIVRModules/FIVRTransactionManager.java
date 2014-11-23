@@ -21,206 +21,158 @@ public class FIVRTransactionManager {
 		last_received_filename = "";
 		return tmp;
 	}
-
-	/**
-	 * Return FIVRPacket array list for transaction; returns null if error. Method assumes you've already got the open bracket packet.
-	 * @param socket Socket to receive all packets on
-	 * @param packet Initial open bracket packet
-	 * @return
-	 */
+	
 	public static ArrayList<FIVRPacket> receiveAllPackets(DatagramSocket socket, FIVRPacket packet, InetAddress sendToHost, int sendToPort) {
+		
 		ArrayList<FIVRPacket> data = new ArrayList<FIVRPacket>();
+		
 		try {
-			
-			// FIVR Rules Initialization
+						
 			int segment_size = 512;
-			
-			// Receive Session Initialization
-			int timeout_attempts = 0;
-			int packets_to_go = 0;
-			int prev_seq_num = 0;
 			int rtt_timeout = 200;
+			int total_packets = Integer.parseInt((new String(packet.payload) + "").trim());
 			DatagramPacket datagram = new DatagramPacket(new byte[segment_size], segment_size);
-
-			timeout_attempts = 0;
 			
-			String tmp = new String(packet.payload) + "";
-			packets_to_go = Integer.parseInt(tmp.trim());
-			int total_packets_count = packets_to_go;
-			int first_packet_seq_num = packet.header.seqNum;
-			// System.out.println("Total Packets: " + total_packets_count);
-			packets_to_go--;
-			prev_seq_num = packet.header.seqNum;
-			
-			// run until all packets received
-			while (packets_to_go > 0) {
+			FIVRBufferManager buffer = new FIVRBufferManager(packet.header.seqNum+1, total_packets-1, packet.header.windowSize);
+						
+			while (!buffer.isFull()) {
+								
+				datagram = new DatagramPacket(new byte[segment_size], segment_size);
+				socket.setSoTimeout(rtt_timeout);
+				socket.receive(datagram);
+				packet = FIVRPacketManager.depacketize(datagram);
 				
-				int current_window_size = packet.header.windowSize;
-				int buffer_size = current_window_size;
-				if (packets_to_go < current_window_size) buffer_size = packets_to_go;
-				FIVRBuffer buffer = new FIVRBuffer(buffer_size,prev_seq_num+1);
+				int result = buffer.addToBuffer(packet);
 				
-				// while buffer isn't full
-				while (!buffer.isFull()) {
-				
-					if (timeout_attempts > max_tries) throw new Exception("Could not receive anymore packets.");
-					
-					try {
-						
-						datagram = new DatagramPacket(new byte[segment_size], segment_size);
-						socket.receive(datagram);
-						socket.setSoTimeout(rtt_timeout);
-						packet = FIVRPacketManager.depacketize(datagram);
-						
-						// determine if closed bracket packet received
-						if((total_packets_count+first_packet_seq_num-1) == packet.header.seqNum) {
-							packets_to_go--;
-							last_received_filename = new String(packet.payload);
-							break;
-						}
-						
-						if(!buffer.addPacket(packet)) {
-							// send NACK
-							sendAckNackResponse(socket,sendToHost,sendToPort,-1,-1,true);
-							// System.out.println("Sending a NACK.");
-							// System.out.println("Packets to go is: " + packets_to_go + " and buffer size is: " + buffer_size);
-							// System.out.println("Looking for packets in range of: " + (prev_seq_num+1) + " to " + (prev_seq_num+1+buffer_size));
-						}
-						
-					} catch (Exception e) {
-						
-						timeout_attempts++;
-						
-					}
+				if (result == 2) {
+					System.out.println("Sending an ACK  " + buffer.sendAckFor());
+					sendAckNackResponse(socket,sendToHost,sendToPort,-1,buffer.sendAckFor(),false);
+				} else if (result == -1) {
+					System.out.println("Sending an NACK " + buffer.nextExpectedSeqNum());
+					sendAckNackResponse(socket,sendToHost,sendToPort,-1,buffer.nextExpectedSeqNum(),true);
+				} else if (result == 1) {
+					// normal operations
 				}
 				
-				// send ACK for set
-				System.out.println("Sending an ACK for " + (prev_seq_num+current_window_size+1));
-				sendAckNackResponse(socket,sendToHost,sendToPort,-1,prev_seq_num+current_window_size+1,false);
-				
-				timeout_attempts = 0;
-				prev_seq_num = prev_seq_num + current_window_size;
-				packets_to_go = packets_to_go - buffer_size;
-				
-				// add to return array
-				data.addAll(buffer.getBuffer());
 			}
+						
+			last_received_filename = buffer.extractFilename();
+			data.addAll(buffer.getAllPackets());
 			
 		} catch (Exception e) {
+			
 			return null;
+			
 		}
+		
 		System.out.println("File (" + last_received_filename + ") successfully received.");
 		return data;
+		
 	}
 	
-	/**
-	 * Returns -1 if failed, else returns next sequence number that can be used.
-	 * @param filename File to be sent
-	 * @param socket Socket to send packets over
-	 * @param sendToHost Receiving host
-	 * @param sendToPort Receiving host's port
-	 * @param seqNum Start sequence number to use
-	 * @return
-	 */
 	public static int sendAllPackets(String filename, DatagramSocket socket, InetAddress sendToHost, int sendToPort, int seqNum) {
+
 		try {
 			
-			// FIVR Rules Initialization
 			int window_size = 5;
 			int segment_size = 512;
-			int threshold = 25;
 			int rtt_timeout = 200;
 			
-			// Send Session Initialization
 			ArrayList<FIVRPacket> toSend = null;
 			try {
 				toSend = FIVRPacketManager.packetize(filename.trim(),socket.getLocalPort(),sendToPort,seqNum,segment_size,window_size,window_size,0);
 			} catch (Exception e) {
+				e.printStackTrace();
 				return -1;
 			}
+
 			int i = 0;
 			int timeout_attempts = 0;
 			DatagramPacket datagram = null;
 			FIVRPacket packet = null;
-			
-			// Initial open bracket packet should have # packets in entire file batch as String in body
 			toSend.get(i).payload = (new String("" + toSend.size())).getBytes();
 			toSend.get(toSend.size()-1).payload = (filename.getBytes());
-			
-			// Send open bracket packet by itself at first
 			boolean sentOpenBracketPacket = false;
+			
 			while (!sentOpenBracketPacket) {
-				if (timeout_attempts >= max_tries) return -1;
+				
+				if (timeout_attempts >= max_tries) {
+					return -1;
+				}
+				
 				try {
 					packet = toSend.get(i);
 					datagram = new DatagramPacket(packet.getBytes(true),packet.getBytes(true).length,sendToHost,sendToPort);
 					socket.send(datagram);
-					// System.out.println("Packet #" + (seqNum + i) + " sent.");	
 					i++;
 					timeout_attempts = 0;
 					sentOpenBracketPacket = true;
 				} catch (Exception e) {
-					// could not send open bracket
 					timeout_attempts++;
 				}
 			}
 			
-			// Packet Sender
 			while (i < toSend.size()) {
 				
-				// check timeout attempts
-				if (timeout_attempts >= max_tries) return -1;
+				if (timeout_attempts >= max_tries) {
+					return -1;
+				}
 				
-				// send set of packets
 				for (int j = 0; j < window_size; j++) {
 					try {
 						packet = toSend.get(i);
 						datagram = new DatagramPacket(packet.getBytes(true),packet.getBytes(true).length,sendToHost,sendToPort);
 						socket.send(datagram);
 						i++;
-						// System.out.println("Packet #" + (seqNum + i) + " sent.");	 
-					} catch (Exception e) {
-						// failed to send packet
-					}
+					} catch (Exception e) { }
 				}
 				
 				try {
-					// check for response
+
 					socket.setSoTimeout(rtt_timeout);
 					datagram = new DatagramPacket(new byte[segment_size],segment_size,sendToHost,sendToPort);
 					socket.receive(datagram);
 					packet = FIVRPacketManager.depacketize(datagram);
 					
-					// analyze response 
-					//if (packet.header.isNACK == 1 || packet.header.ack != (seqNum+i)) {
-					if (packet.header.isNACK == 1) {
-						i = i - window_size;
-						threshold = (threshold / 2) + 1;
-						//window_size = threshold;
-					} else {
-						i = packet.header.ack - seqNum;
-						timeout_attempts = 0;
-						if (window_size < threshold) {
-							//window_size = (window_size * window_size) / 2;
-						} else {
-							//window_size++;
-						}
-					}	
+					while (packet.header.isNACK == 1) {
+												
+						try {
+							
+							System.out.println("isNack: " + packet.header.isNACK + " ACK Num: " + packet.header.ack);
+							
+							// send desired NACK one
+							System.out.println("Sending packet: " + (packet.header.ack - seqNum + 1));
+							packet = toSend.get(packet.header.ack - seqNum + 1);
+							datagram = new DatagramPacket(packet.getBytes(true),packet.getBytes(true).length,sendToHost,sendToPort);
+							socket.send(datagram);
+						
+							// get new NACK/ACK response
+							socket.setSoTimeout(rtt_timeout);
+							datagram = new DatagramPacket(new byte[segment_size],segment_size,sendToHost,sendToPort);
+							socket.receive(datagram);
+							packet = FIVRPacketManager.depacketize(datagram);
+							
+						} catch (Exception e) { }
+						
+					}
+						
 				} catch (Exception e) {
 					timeout_attempts++;
-					i = i - window_size;
-					threshold = 25;
-					//window_size = 5;
 				}
 				
 			}
 			
-			// Return
 			return seqNum + toSend.size();
+			
 		} catch (Exception e) {
-			return -1;	
+			
+			System.out.println("FAILED D");
+			e.printStackTrace();
+			return -1;
+			
 		}
-	}	
+		
+	}
 
 	/**
 	 * Return -1 if failed, else returns next sequence number that can be used.
