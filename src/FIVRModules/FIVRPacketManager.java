@@ -124,7 +124,7 @@ public class FIVRPacketManager
 
 			FIVRHeader header = new FIVRHeader(headerBuffer.getInt(), headerBuffer.getInt(), headerBuffer.getInt(), headerBuffer.getInt(), headerBuffer.getInt(), headerBuffer.getInt());
 			
-			if(datagramData.length > 24)//packet contains payload
+			if(datagramData.length > FIVRHeader.HEADER_SIZE)//packet contains payload
 			{
 				ByteBuffer payloadBuffer = ByteBuffer.allocate(datagramData.length - FIVRHeader.HEADER_SIZE);
 				payloadBuffer.order(ByteOrder.LITTLE_ENDIAN);

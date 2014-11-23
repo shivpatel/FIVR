@@ -70,7 +70,7 @@ public class Test
 		
 		FIVRFile.writeBytesToFile(filename, lenna);
 		
-		FIVRBuffer buffer = new FIVRBuffer(10, 0);
+		FIVRBuffer buffer = new FIVRBuffer(11, 0);
 		
 		buffer.addPacket(outputPackets.get(2));
 		buffer.addPacket(outputPackets.get(2));
