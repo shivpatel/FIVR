@@ -127,7 +127,7 @@ public class ServiceHandler implements Runnable {
 		}
 		
 		try {
-			String name = "" + FIVRTransactionManager.getLastReceivedFilename().trim();
+			String name = "ServerFiles/" + FIVRTransactionManager.getLastReceivedFilename().trim();
 			Server.log("The file will be stored as " + name,true);
 			Files.write(Paths.get(name), fileData);
 		} catch (Exception e) {

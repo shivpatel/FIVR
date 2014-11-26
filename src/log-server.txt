@@ -1,0 +1,66 @@
+Server is ready...
+Connection request packet arrived.
+Processing incoming connection request.
+Client from /127.0.0.1:8000 connected!
+Upload file packet request arrived.
+The file will be stored as ServerFiles/Kitten.jpg
+Connection request packet arrived.
+Processing incoming connection request.
+Client from /127.0.0.1:8000 connected!
+Download file packet request arrived.
+Request to download Lenna.png
+Failed to send file.
+Download file packet request arrived.
+Request to download Lenna.png
+Failed to send file.
+Download file packet request arrived.
+Request to download Lenna.png
+Failed to send file.
+Download file packet request arrived.
+Request to download Lenna.png
+Failed to send file.
+Download file packet request arrived.
+Request to download Lenna.png
+Failed to send file.
+Download file packet request arrived.
+Request to download Lenna.png
+Failed to send file.
+Download file packet request arrived.
+Request to download Lenna.png
+Failed to send file.
+Download file packet request arrived.
+Request to download Lenna.png
+Failed to send file.
+Download file packet request arrived.
+Request to download Lenna.png
+Failed to send file.
+Download file packet request arrived.
+Request to download Lenna.png
+Failed to send file.
+Download file packet request arrived.
+Request to download Lenna.png
+Failed to send file.
+Download file packet request arrived.
+Request to download Lenna.png
+Failed to send file.
+Download file packet request arrived.
+Request to download Lenna.png
+Failed to send file.
+Download file packet request arrived.
+Request to download Lenna.png
+Failed to send file.
+Download file packet request arrived.
+Request to download Lenna.png
+Failed to send file.
+Download file packet request arrived.
+Request to download Lenna.png
+Failed to send file.
+Download file packet request arrived.
+Request to download Lenna.png
+Failed to send file.
+Connection request packet arrived.
+Processing incoming connection request.
+Client from /127.0.0.1:8000 connected!
+Download file packet request arrived.
+Request to download ServerFiles/Lenna.png
+File sent to client!

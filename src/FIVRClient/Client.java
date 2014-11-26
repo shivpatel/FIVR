@@ -263,7 +263,7 @@ public class Client {
 		}
 		
 		try {
-			String name = "" + FIVRTransactionManager.getLastReceivedFilename().trim();
+			String name = "ClientFiles/" + FIVRTransactionManager.getLastReceivedFilename().trim();
 			System.out.println("The file will be stored as " + name);
 			Files.write(Paths.get(name), fileData);
 		} catch (Exception e) {
