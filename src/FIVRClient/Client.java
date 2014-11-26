@@ -183,6 +183,9 @@ public class Client {
 	 * @return
 	 */
 	public static boolean getFile(String file) {
+		
+		long startTime = System.currentTimeMillis()/1000;
+		
 		if (!connected) {
 			System.out.println("Connect to server first.");
 			return false;
@@ -268,6 +271,9 @@ public class Client {
 			return false;
 		}
 		
+		System.out.println("Download duration: " + ((System.currentTimeMillis()/1000) - startTime) + " seconds");
+		System.out.println("Download speed average: " + (FIVRTransactionManager.last_file_size/((System.currentTimeMillis()/1000) - startTime)) + " kbps");
+		
 		return true;
 	}
 
@@ -279,6 +285,7 @@ public class Client {
 	 * @return
 	 */
 	public static boolean postFile(String filename) {
+		long startTime = System.currentTimeMillis()/1000;
 		if (!connected) {
 			System.out.println("Connect to server first.");
 			return false;
@@ -290,6 +297,8 @@ public class Client {
 		} else {
 			System.out.println("File successfully uploaded!");
 			PACKET_SEQUENCE_NUM = result;
+			System.out.println("Upload duration: " + ((System.currentTimeMillis()/1000) - startTime) + " seconds");
+			System.out.println("Upload speed average: " + (FIVRTransactionManager.last_file_size/((System.currentTimeMillis()/1000) - startTime)) + " kbps");
 			return true;
 		}
 	}

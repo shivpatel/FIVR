@@ -16,6 +16,7 @@ public class FIVRTransactionManager {
 	public static int max_tries = 2000;
 	public static int rttTime = 200;
 	public static int window_size_main = 5;
+	public static int last_file_size = 0;
 	
 	/**
 	 * Returns last filename detected from receiveAllPackets function. Erases values after being called.
@@ -60,6 +61,7 @@ public class FIVRTransactionManager {
 			//packets_to_go = Integer.parseInt(tmp.trim());
 			int total_packets_count = byteBuffer.getInt();
 			packets_to_go = total_packets_count;
+			last_file_size = (total_packets_count * 512) / 1000;
 			int first_packet_seq_num = packet.header.seqNum;
 			// System.out.println("Total Packets: " + total_packets_count);
 			packets_to_go--;
@@ -192,6 +194,7 @@ public class FIVRTransactionManager {
 			} catch (Exception e) {
 				return -1;
 			}
+			last_file_size = (toSend.size() * 512) / 1000;
 			int i = 0;
 			int timeout_attempts = 0;
 			DatagramPacket datagram = null;
