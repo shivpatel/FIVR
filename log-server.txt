@@ -24,3 +24,34 @@ Client from /127.0.0.1:8000 connected!
 Download file packet request arrived.
 Request to download dksfjskd.dfs
 Failed to send file.
+Server is ready...
+Connection request packet arrived.
+Processing incoming connection request.
+Client from /127.0.0.1:8000 connected!
+Connection request packet arrived.
+Processing incoming connection request.
+Client from /127.0.0.1:8000 connected!
+Connection request packet arrived.
+Processing incoming connection request.
+Client from /127.0.0.1:8000 connected!
+Download file packet request arrived.
+Request to download boo
+Failed to send file.
+Download file packet request arrived.
+Request to download boo
+Failed to send file.
+Download file packet request arrived.
+Request to download boo
+Failed to send file.
+Download file packet request arrived.
+Request to download boo
+Failed to send file.
+Download file packet request arrived.
+Request to download boo
+Failed to send file.
+Download file packet request arrived.
+Request to download foo
+Failed to send file.
+Download file packet request arrived.
+Request to download sanjay
+Failed to send file.

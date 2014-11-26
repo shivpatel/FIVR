@@ -142,10 +142,31 @@ public class ServiceHandler implements Runnable {
 		int result = FIVRTransactionManager.sendAllPackets(filename,socket,Server.host,Server.emulatorPort,PACKET_SEQUENCE_NUM);
 		if (result == -1) {
 			Server.log("Failed to send file.",true);
-			FIVRTransactionManager.sendAckNackResponse(socket, Server.host, Server.emulatorPort, -404, -404, false);
+			manageFileNotFoundResponse();
 		} else {
 			Server.log("File sent to client!",true);
 			PACKET_SEQUENCE_NUM = result;
+		}
+	}
+	
+	public void manageFileNotFoundResponse() {
+		boolean clientAck = false;
+		int didntGetResposne = 0;
+		while (!clientAck) {
+			try {
+				if (didntGetResposne > 5) { return; }
+				FIVRTransactionManager.sendAckNackResponse(socket, Server.host, Server.emulatorPort, -404, -404, false);
+				DatagramPacket packet = new DatagramPacket(
+						new byte[PACKET_SIZE], PACKET_SIZE);
+				socket.setSoTimeout(RTT_TIMEOUT);
+				socket.receive(packet);
+				FIVRPacket pkt = FIVRPacketManager.depacketize(packet);
+				if (pkt.header.ack == -404) {
+					clientAck = true;
+				}
+			} catch (Exception e) {
+				didntGetResposne++;
+			}
 		}
 	}
 
