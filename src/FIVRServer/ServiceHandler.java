@@ -142,6 +142,7 @@ public class ServiceHandler implements Runnable {
 		int result = FIVRTransactionManager.sendAllPackets(filename,socket,Server.host,Server.emulatorPort,PACKET_SEQUENCE_NUM);
 		if (result == -1) {
 			Server.log("Failed to send file.",true);
+			FIVRTransactionManager.sendAckNackResponse(socket, Server.host, Server.emulatorPort, -404, -404, false);
 		} else {
 			Server.log("File sent to client!",true);
 			PACKET_SEQUENCE_NUM = result;

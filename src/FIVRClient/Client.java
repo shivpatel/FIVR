@@ -234,7 +234,11 @@ public class Client {
 					{
 						gotOpenBracketPacket = true;
 						RTT_TIMEOUT -= 50;
-					}	
+					}
+					if(fPacket.header.ack == -404 && fPacket.header.seqNum == -404) {
+						System.out.println("File not found. The server could not find that file.");
+						return false;
+					}
 				}
 				
 			} catch (Exception e) {}
