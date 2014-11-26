@@ -20,7 +20,7 @@ public class ServiceHandler implements Runnable {
 	public static DatagramSocket socket;
 	public static String logOutput;
 
-	public static int WINDOW_THRESHOLD = 25; // 25 max
+	public static int WINDOW_THRESHOLD = 25; // 25 max  
 	public static int WINDOW_SIZE = 5; // 5 packets per window
 	public static int PACKET_SIZE = 512; // 512 bytes
 	public static int BUFFER_SIZE = 1000; // 1000 bytes

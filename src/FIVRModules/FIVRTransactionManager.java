@@ -73,7 +73,7 @@ public class FIVRTransactionManager {
 			
 			int antiEmulatorPummel = 0;
 			
-			// run until all packets received
+			// run until all packets received  
 			while (packets_to_go > 0) {
 				
 				int current_window_size = packet.header.windowSize;

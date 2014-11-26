@@ -165,7 +165,7 @@ public class Client {
 	 * Disconnect socket connection
 	 */
 	public static void disconnect() {
-		if (!connected) {
+		if (!connected) {  
 			System.out.println("Needs to be connected before disconnecting.");
 			return;
 		}
