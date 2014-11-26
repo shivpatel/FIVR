@@ -28,7 +28,7 @@ public class FIVRPacket implements Comparable<FIVRPacket>, Serializable
 	 */
 	public byte[] getBytes(boolean withChecksum) 
 	{
-		if(payload != null)
+		if(payload != null && payload.length > 0)
 		{
 			ByteBuffer buffer = ByteBuffer.allocate(FIVRHeader.HEADER_SIZE + payload.length);
 			buffer.order(ByteOrder.LITTLE_ENDIAN);

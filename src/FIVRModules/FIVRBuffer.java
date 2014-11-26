@@ -82,4 +82,28 @@ public class FIVRBuffer
 	{
 		return buffer;
 	}
+	
+	/**
+	 * Checks to see if the file is finished being transferred
+	 * @return true if file transfer is complete, false otherwise
+	 */
+	public boolean isFileTransferComplete()
+	{
+		boolean closingBracketExists = false;
+		
+		for(int i = 0; i < buffer.size(); i++)
+		{
+			if(buffer.get(i).header.fileClosingBracket == 1)
+			{
+				closingBracketExists = true;
+				break;
+			}
+		}
+		
+		//Since the buffer maintains order, we can be sure that all the other packets before this point have arrived and
+		//been stored. That means if the buffer is full and the closing bracket exists in the buffer, then we can be assured
+		//that the entire file has arrived, because packets that are outside the window aren't allowed in.
+		
+		return (isFull() && closingBracketExists);
+	}
 }

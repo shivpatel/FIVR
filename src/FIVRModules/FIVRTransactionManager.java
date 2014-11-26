@@ -3,14 +3,18 @@ package FIVRModules;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 
+import FIVRClient.Client;
 import FIVRServer.Server;
 
 public class FIVRTransactionManager {
 	
 	private static String last_received_filename = "";
-	public static int max_tries = 25;
+	public static int max_tries = 2000;
+	public static int rttTime = 200;
 	
 	/**
 	 * Returns last filename detected from receiveAllPackets function. Erases values after being called.
@@ -39,18 +43,33 @@ public class FIVRTransactionManager {
 			int timeout_attempts = 0;
 			int packets_to_go = 0;
 			int prev_seq_num = 0;
-			int rtt_timeout = 200;
+			int openPacketSeqNum = packet.header.seqNum;
+			//int rtt_timeout = 200;
 			DatagramPacket datagram = new DatagramPacket(new byte[segment_size], segment_size);
 
 			timeout_attempts = 0;
 			
-			String tmp = new String(packet.payload) + "";
-			packets_to_go = Integer.parseInt(tmp.trim());
-			int total_packets_count = packets_to_go;
+			//String tmp = new String(packet.payload) + "";
+			
+			ByteBuffer byteBuffer = ByteBuffer.allocate(packet.payload.length);
+			byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
+			byteBuffer.put(packet.payload);
+			byteBuffer.position(0);
+			
+			//packets_to_go = Integer.parseInt(tmp.trim());
+			int total_packets_count = byteBuffer.getInt();
+			packets_to_go = total_packets_count;
 			int first_packet_seq_num = packet.header.seqNum;
 			// System.out.println("Total Packets: " + total_packets_count);
 			packets_to_go--;
 			prev_seq_num = packet.header.seqNum;
+			
+			
+			//in the beginning, keeping sending an ack for the open bracket packet until you get a data packet back.
+			//this indicates that the other side has seen that you have gotten the open bracket packet and you're now
+			//ready to receive datapackets.
+			
+			boolean sendAckForSet = true;
 			
 			// run until all packets received
 			while (packets_to_go > 0) {
@@ -67,25 +86,45 @@ public class FIVRTransactionManager {
 					
 					try {
 						
-						datagram = new DatagramPacket(new byte[segment_size], segment_size);
-						socket.receive(datagram);
-						socket.setSoTimeout(rtt_timeout);
-						packet = FIVRPacketManager.depacketize(datagram);
-						
-						// determine if closed bracket packet received
-						if((total_packets_count+first_packet_seq_num-1) == packet.header.seqNum) {
-							packets_to_go--;
-							last_received_filename = new String(packet.payload);
-							break;
+						if(sendAckForSet)//keep sending ack for the set
+						{
+							sendAckNackResponse(socket, sendToHost, sendToPort, -1, prev_seq_num+1, false);
 						}
 						
-						if(!buffer.addPacket(packet)) {
+						datagram = new DatagramPacket(new byte[segment_size], segment_size);
+						
+						//socket.setSoTimeout(rtt_timeout);
+						socket.receive(datagram);
+									
+						packet = FIVRPacketManager.depacketize(datagram);
+						
+						buffer.addPacket(packet);
+						
+						if(!FIVRPacketManager.isPacketCorrupt(packet))
+						{
+							if(packet.payload != null && packet.payload.length != 0 && packet.header.seqNum > openPacketSeqNum)//received valid datapacket
+							{
+								sendAckForSet = false;
+							}
+							
+							// determine if closed bracket packet received
+							//if((total_packets_count+first_packet_seq_num-1) == packet.header.seqNum) {
+							if(buffer.isFileTransferComplete())
+							{
+								packets_to_go = 0;
+								ArrayList<FIVRPacket> tempBuff = buffer.getBuffer();
+								last_received_filename = new String(tempBuff.get(tempBuff.size()-1).payload);//closing packet will ALWAYS be the last packet in the buffer if it does exist in the buffer      //new String(packet.payload);
+								break;
+							}
+						}
+						
+						/*if(!buffer.addPacket(packet)) {
 							// send NACK
 							sendAckNackResponse(socket,sendToHost,sendToPort,-1,-1,true);
 							// System.out.println("Sending a NACK.");
 							// System.out.println("Packets to go is: " + packets_to_go + " and buffer size is: " + buffer_size);
 							// System.out.println("Looking for packets in range of: " + (prev_seq_num+1) + " to " + (prev_seq_num+1+buffer_size));
-						}
+						}*/
 						
 					} catch (Exception e) {
 						
@@ -94,20 +133,32 @@ public class FIVRTransactionManager {
 					}
 				}
 				
-				// send ACK for set
-				System.out.println("Sending an ACK for " + (prev_seq_num+current_window_size+1));
-				sendAckNackResponse(socket,sendToHost,sendToPort,-1,prev_seq_num+current_window_size+1,false);
+				if(packets_to_go == 0)
+				{
+					System.out.println("Sending an ACK for " + (prev_seq_num+current_window_size+1));
+					data.addAll(buffer.getBuffer());
+					sendAckNackResponse(socket,sendToHost,sendToPort,-1,prev_seq_num+current_window_size+1,false);
+					break;
+				}
+				else
+				{
+					// send ACK for set
+					System.out.println("Sending an ACK for " + (prev_seq_num+current_window_size+1));
+					sendAckForSet = true;
+					//sendAckNackResponse(socket,sendToHost,sendToPort,-1,prev_seq_num+current_window_size+1,false);
+					
+					timeout_attempts = 0;
+					prev_seq_num = prev_seq_num + current_window_size;
+					packets_to_go = packets_to_go - buffer_size;
+					
+					// add to return array
+					data.addAll(buffer.getBuffer());
+				}
 				
-				timeout_attempts = 0;
-				prev_seq_num = prev_seq_num + current_window_size;
-				packets_to_go = packets_to_go - buffer_size;
-				
-				// add to return array
-				data.addAll(buffer.getBuffer());
 			}
 			
 		} catch (Exception e) {
-			return null;
+			e.getMessage();
 		}
 		System.out.println("File (" + last_received_filename + ") successfully received.");
 		return data;
@@ -144,8 +195,8 @@ public class FIVRTransactionManager {
 			FIVRPacket packet = null;
 			
 			// Initial open bracket packet should have # packets in entire file batch as String in body
-			toSend.get(i).payload = (new String("" + toSend.size())).getBytes();
-			toSend.get(toSend.size()-1).payload = (filename.getBytes());
+			//toSend.get(i).payload = (new String("" + toSend.size())).getBytes();
+			//toSend.get(toSend.size()-1).payload = (filename.getBytes());
 			
 			// Send open bracket packet by itself at first
 			boolean sentOpenBracketPacket = false;
@@ -155,11 +206,35 @@ public class FIVRTransactionManager {
 					packet = toSend.get(i);
 					datagram = new DatagramPacket(packet.getBytes(true),packet.getBytes(true).length,sendToHost,sendToPort);
 					socket.send(datagram);
-					// System.out.println("Packet #" + (seqNum + i) + " sent.");	
-					i++;
-					timeout_attempts = 0;
-					sentOpenBracketPacket = true;
-				} catch (Exception e) {
+					// System.out.println("Packet #" + (seqNum + i) + " sent.");
+				}
+				catch(Exception e){
+					e.getMessage();
+				}
+				
+				try
+				{
+					//listen for an ack for next seqnum indicating that the other end got the open bracket intact
+					//socket.setSoTimeout(rtt_timeout);
+					datagram = new DatagramPacket(new byte[segment_size],segment_size,sendToHost,sendToPort);
+					socket.receive(datagram);
+					FIVRPacket responsePacket = FIVRPacketManager.depacketize(datagram);
+					
+					if(!FIVRPacketManager.isPacketCorrupt(responsePacket))//make sure the packet is not corrupt
+					{
+						//make sure the packet is an ack for the open bracket packet we just sent
+						if(responsePacket.header.isNACK == 0 && responsePacket.header.ack == packet.header.seqNum + 1)
+						{
+							i++;
+							timeout_attempts = 0;
+							sentOpenBracketPacket = true;
+							
+							Client.RTT_TIMEOUT -= 50;
+						}
+					}
+					
+				} 		
+				catch (Exception e) {
 					// could not send open bracket
 					timeout_attempts++;
 				}
@@ -237,8 +312,11 @@ public class FIVRTransactionManager {
 			int WindowSize = 1;
 			int nackVal = 0;
 			if (isNack) { nackVal = 1; }
-			FIVRHeader header = new FIVRHeader(socket.getLocalPort(),sendToPort,seqNum,ackNum,-1,WindowSize,0,0,nackVal,0,0,WindowSize,0,0,0);
+			
+			FIVRHeader header = new FIVRHeader(socket.getLocalPort(),sendToPort,seqNum,ackNum,0,WindowSize,0,0,nackVal,0,0,WindowSize,0,0,0);
 			FIVRPacket response = new FIVRPacket(header, new byte[0]);
+			response.header.setChecksum(FIVRChecksum.generateChecksum(response.getBytes(false)));
+			
 			DatagramPacket datagram = new DatagramPacket(response.getBytes(true),response.getBytes(true).length,sendToHost,sendToPort);
 			socket.send(datagram);
 			return seqNum + 1;

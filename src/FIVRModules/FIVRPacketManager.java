@@ -57,7 +57,17 @@ public class FIVRPacketManager
 			FIVRPacket currentPacket = new FIVRPacket(currentHeader, null);
 			seqNum += 1;
 			
-			int payloadSize = segmentSize - FIVRHeader.HEADER_SIZE;
+			int payloadSize = 0;//segmentSize - FIVRHeader.HEADER_SIZE;
+			
+			if(segmentSize - FIVRHeader.HEADER_SIZE + bufferOffset > contentBuffer.length)
+			{
+				payloadSize = contentBuffer.length - bufferOffset;
+			}
+			else
+			{
+				payloadSize = segmentSize - FIVRHeader.HEADER_SIZE;
+			}
+			
 			byte[] payload = new byte[payloadSize];
 			
 			for(int i = 0; i < payloadSize; i++)
@@ -96,7 +106,7 @@ public class FIVRPacketManager
 		buff.putInt(packets.size());
 		
 		packets.get(0).payload = buff.array();
-		openPacket.header.setChecksum(FIVRChecksum.generateChecksum(openPacket.getBytes(false)));
+		packets.get(0).header.setChecksum(FIVRChecksum.generateChecksum(openPacket.getBytes(false)));
 		
 		return packets;
 	}
@@ -113,7 +123,9 @@ public class FIVRPacketManager
 		byte[] datagramData = datagram.getData();
 		byte[] payloadBytes;
 		
-		if(datagramData.length >= 24)
+		int dataLength = datagram.getLength();
+		
+		if(datagram.getLength() >= 24)
 		{
 			ByteBuffer headerBuffer = ByteBuffer.allocate(FIVRHeader.HEADER_SIZE);
 			headerBuffer.order(ByteOrder.LITTLE_ENDIAN);
@@ -124,14 +136,16 @@ public class FIVRPacketManager
 
 			FIVRHeader header = new FIVRHeader(headerBuffer.getInt(), headerBuffer.getInt(), headerBuffer.getInt(), headerBuffer.getInt(), headerBuffer.getInt(), headerBuffer.getInt());
 			
-			if(datagramData.length > FIVRHeader.HEADER_SIZE)//packet contains payload
+			if(datagram.getLength() > FIVRHeader.HEADER_SIZE)//packet contains payload
 			{
-				ByteBuffer payloadBuffer = ByteBuffer.allocate(datagramData.length - FIVRHeader.HEADER_SIZE);
+				ByteBuffer payloadBuffer = ByteBuffer.allocate(datagram.getLength() - FIVRHeader.HEADER_SIZE);
 				payloadBuffer.order(ByteOrder.LITTLE_ENDIAN);
 				
 				//strip packet payload from the datagramData
-				payloadBuffer.put(datagramData, FIVRHeader.HEADER_SIZE, datagramData.length - FIVRHeader.HEADER_SIZE);
-				payloadBytes = payloadBuffer.array();
+				payloadBuffer.put(datagramData, FIVRHeader.HEADER_SIZE, datagram.getLength() - FIVRHeader.HEADER_SIZE);
+				payloadBytes = payloadBuffer.array();		
+				
+				//byte[] trimmedPayload = trimPayload(payloadBytes);//get rid of trailing zeros (trailing zeros mess up checksum)
 				
 				FIVRPacket packet = new FIVRPacket(header, payloadBytes);
 				
@@ -146,5 +160,52 @@ public class FIVRPacketManager
 		}
 
         return null;
+	}
+	
+	public static boolean isPacketCorrupt(FIVRPacket packet)
+	{
+		int checksum = FIVRChecksum.generateChecksum(packet.getBytes(false));
+		
+		return checksum != packet.header.getChecksum();
+	}
+	
+	/**
+	 * Trims input byte array of trailing zeros integers
+	 * @param byte array to remove trailing zeros from
+	 * @return input byte array without trailing zeros
+	 */
+	private static byte[] trimPayload(byte[] payload)
+	{
+		int index = -1;
+		
+		//calculate the index at which the trailing zeros begin
+		for(int i = payload.length-1; i >= 0; i--)
+		{
+			byte value = payload[i];
+			
+			if(value != 0)
+			{
+				index = i;
+				break;
+			}
+		}
+		
+		if(index == -1)
+		{
+			return new byte[0];
+		}
+		else
+		{
+			int multiplier = ((index) / 4) + 1;
+			
+			byte[] bytes = new byte[4 * multiplier];//resulting byte buffer must be a multiple of 4 (size of a single int)
+			
+			for(int i = 0; i <= index; i++)
+			{
+				bytes[i] = payload[i];
+			}
+			
+			return bytes;
+		}
 	}
 }

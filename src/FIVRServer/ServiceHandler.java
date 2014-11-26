@@ -41,7 +41,6 @@ public class ServiceHandler implements Runnable {
 					if (Server.initializeState == true) {
 						// do initialization for server
 						socket = new DatagramSocket(Server.serverPort);
-						socket.setSoTimeout(200);
 						Server.log("Server is ready...",true);
 						Server.initializeState = false;
 					} else {
@@ -49,24 +48,28 @@ public class ServiceHandler implements Runnable {
 						try {
 							DatagramPacket packet = new DatagramPacket(
 									new byte[PACKET_SIZE], PACKET_SIZE);
-							socket.setSoTimeout(200);
 							socket.receive(packet); // receiving packet
 							FIVRPacket pkt = FIVRPacketManager.depacketize(packet);
-							if (pkt.header.connectRequest == 1) {
-								Server.log("Connection request packet arrived.");
-								handleConnectRequset(pkt, packet);
-							} else if (pkt.header.isDownload == 1) {
-								Server.log("Download file packet request arrived.");
-								handleDownloadRequset(pkt, packet);
-							} else if (pkt.header.isDownload == 0
-									&& pkt.header.fileOpenBracket == 1) {
-								Server.log("Upload file packet request arrived.");
-								handleUploadRequset(pkt, packet);
-							} else if (pkt.header.fileOpenBracket == 1) {
-								Server.log("Open bracket packet arrived; unknown action next.");
-							} else {
-								Server.log("Unknown packet arrived.");
-							}
+							
+							if(!FIVRPacketManager.isPacketCorrupt(pkt))//make sure received packet is not corrupt
+							{
+								if (pkt.header.connectRequest == 1) {
+									Server.log("Connection request packet arrived.");
+									handleConnectRequset(pkt, packet);
+								} else if (pkt.header.isDownload == 1) {
+									Server.log("Download file packet request arrived.");
+									handleDownloadRequset(pkt, packet);
+								} else if (pkt.header.isDownload == 0
+										&& pkt.header.fileOpenBracket == 1) {
+									Server.log("Upload file packet request arrived.");
+									handleUploadRequset(pkt, packet);
+								} else if (pkt.header.fileOpenBracket == 1) {
+									Server.log("Open bracket packet arrived; unknown action next.");
+								} else {
+									Server.log("Unknown packet arrived.");
+								}
+							}					
+							
 						} catch (Exception e) {
 							
 						}
@@ -82,11 +85,13 @@ public class ServiceHandler implements Runnable {
 		try {
 			Server.log("Processing incoming connection request.");
 			FIVRHeader header = new FIVRHeader(Server.serverPort,
-					packet.header.sourcePort, PACKET_SEQUENCE_NUM, -1, -1,
+					packet.header.sourcePort, PACKET_SEQUENCE_NUM, -1, 0,
 					WINDOW_SIZE, 1, 0, 0, 0, 1, WINDOW_SIZE,
 					0, 0, 0);
 			PACKET_SEQUENCE_NUM++;
 			FIVRPacket response = new FIVRPacket(header, new byte[0]);
+			response.header.setChecksum(FIVRChecksum.generateChecksum(response.getBytes(false)));//set checksum for connect ack packet
+			
 			DatagramPacket resposneDG = new DatagramPacket(response.getBytes(true),
 					response.getBytes(true).length, Server.host,
 					Server.emulatorPort);
@@ -108,13 +113,13 @@ public class ServiceHandler implements Runnable {
 		}
 		
 		int bytesNeeded = 0;
-		for (int i = 0; i < data.size(); i++) {
+		for (int i = 0; i < data.size()-1; i++) {
 			bytesNeeded += data.get(i).payload.length;
 		}
 		
 		byte[] fileData = new byte[bytesNeeded];
 		int index = 0;
-		for (int i = 0; i < data.size(); i++) {
+		for (int i = 0; i < data.size()-1; i++) {
 			for (int j = 0; j < data.get(i).payload.length; j++) {
 				fileData[index] = data.get(i).payload[j];
 				index++;

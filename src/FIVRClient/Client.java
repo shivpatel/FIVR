@@ -24,7 +24,7 @@ public class Client {
 	public static int WINDOW_SIZE = 5; // 5 packets per window
 	public static int PACKET_SIZE = 512; // 512 bytes
 	public static int BUFFER_SIZE = 1000; // 1000 bytes
-	public static int RTT_TIMEOUT = 200; // 2 sec.
+	public static int RTT_TIMEOUT = 1200; // 2 sec.
 	public static int CONNECTION_TIMEOUT = 30000; // 30 sec.
 	public static int PACKET_SEQUENCE_NUM = 0;
 
@@ -108,10 +108,11 @@ public class Client {
 		try {
 			socket = new DatagramSocket(clientPort);
 			FIVRHeader header = new FIVRHeader(clientPort, port,
-					PACKET_SEQUENCE_NUM, -1, -1, 1, 1, 0,
+					PACKET_SEQUENCE_NUM, -1, 0, 1, 1, 0,
 					0, 0, 0, 1, 0, 0, 0);
 			PACKET_SEQUENCE_NUM++;
 			FIVRPacket requestPacket = new FIVRPacket(header, new byte[0]);
+			requestPacket.header.setChecksum(FIVRChecksum.generateChecksum(requestPacket.getBytes(false)));//generate checksum for connection request packet
 			DatagramPacket packet2 = new DatagramPacket(
 					requestPacket.getBytes(true), requestPacket.getBytes(true).length,
 					host, port);
@@ -129,11 +130,20 @@ public class Client {
 					socket.send(packet2);
 					DatagramPacket packet = new DatagramPacket(new byte[PACKET_SIZE], PACKET_SIZE, host, port);
 					socket.receive(packet);
-					if (FIVRPacketManager.depacketize(packet).header.recvToSendAck == 1) {
-						gotResponse = true;
+					
+					FIVRPacket receivedPacket = FIVRPacketManager.depacketize(packet);
+					
+					if(!FIVRPacketManager.isPacketCorrupt(receivedPacket))//check for corruption
+					{
+						if (FIVRPacketManager.depacketize(packet).header.recvToSendAck == 1) {
+							gotResponse = true;
+						}
 					}
+					
+					
 				} catch (Exception e) {}
 				tries++;
+				RTT_TIMEOUT += 50;
 			}
 			
 			connected = true;
@@ -177,18 +187,21 @@ public class Client {
 			return false;
 		}
 		
+		DatagramPacket downloadReqDatagram = null;
 		try {
 			// send download request packet
-			byte[] data = file.getBytes();
+			byte[] data = file.getBytes("UTF-8");
 			FIVRHeader header = new FIVRHeader(clientPort, port,
 					PACKET_SEQUENCE_NUM, -1, -1, WINDOW_SIZE, 0, 0,
 					0, 0, 0, WINDOW_SIZE, 1, 0, 0);
 			PACKET_SEQUENCE_NUM++;
 			FIVRPacket requestPacket = new FIVRPacket(header, data);
-			DatagramPacket packet = new DatagramPacket(
+			requestPacket.header.setChecksum(FIVRChecksum.generateChecksum(requestPacket.getBytes(false)));
+			
+			downloadReqDatagram = new DatagramPacket(
 					requestPacket.getBytes(true), requestPacket.getBytes(true).length,
 					host, port);
-			socket.send(packet);
+			
 		} catch (Exception e) {
 			System.out.println("Could not get that file. Error: " + e);
 			return false;
@@ -203,13 +216,26 @@ public class Client {
 					System.out.println("Could not get that file. Error: Request response never received.");
 					return false;
 				}
-				socket.setSoTimeout(RTT_TIMEOUT);
+				
+				socket.send(downloadReqDatagram);//resends request for download since we haven't gotten the open bracket yet
+				
+				//socket.setSoTimeout(RTT_TIMEOUT);
 				DatagramPacket datagram = new DatagramPacket(new byte[PACKET_SIZE], PACKET_SIZE);
 				socket.receive(datagram);
 				fPacket = FIVRPacketManager.depacketize(datagram);
-				gotOpenBracketPacket = true;
+				
+				if(!FIVRPacketManager.isPacketCorrupt(fPacket))
+				{
+					if(fPacket.header.fileOpenBracket == 1)
+					{
+						gotOpenBracketPacket = true;
+						RTT_TIMEOUT -= 50;
+					}	
+				}
+				
 			} catch (Exception e) {}
 			too_many_tries++;
+			RTT_TIMEOUT += 50;
 		}
 		
 		ArrayList<FIVRPacket> data = FIVRTransactionManager.receiveAllPackets(socket, fPacket, host, port);
@@ -219,13 +245,13 @@ public class Client {
 		}
 		
 		int bytesNeeded = 0;
-		for (int i = 0; i < data.size(); i++) {
+		for (int i = 0; i < data.size()-1; i++) {
 			bytesNeeded += data.get(i).payload.length;
 		}
 		
 		byte[] fileData = new byte[bytesNeeded];
 		int index = 0;
-		for (int i = 0; i < data.size(); i++) {
+		for (int i = 0; i < data.size()-1; i++) {
 			for (int j = 0; j < data.get(i).payload.length; j++) {
 				fileData[index] = data.get(i).payload[j];
 				index++;
