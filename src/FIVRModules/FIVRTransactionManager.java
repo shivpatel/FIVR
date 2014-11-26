@@ -69,7 +69,9 @@ public class FIVRTransactionManager {
 			//this indicates that the other side has seen that you have gotten the open bracket packet and you're now
 			//ready to receive datapackets.
 			
-			boolean sendAckForSet = true;
+			boolean sendAckForSet = true;//keep from slamming the emu with packets, cause it queues them. Slow it down, champ.
+			
+			int antiEmulatorPummel = 0;
 			
 			// run until all packets received
 			while (packets_to_go > 0) {
@@ -81,12 +83,11 @@ public class FIVRTransactionManager {
 				
 				// while buffer isn't full
 				while (!buffer.isFull()) {
-				
 					if (timeout_attempts > max_tries) throw new Exception("Could not receive anymore packets.");
 					
 					try {
 						
-						if(sendAckForSet)//keep sending ack for the set
+						if(sendAckForSet && antiEmulatorPummel % 5 == 0)//keep sending ack for the set
 						{
 							sendAckNackResponse(socket, sendToHost, sendToPort, -1, prev_seq_num+1, false);
 						}
@@ -102,7 +103,7 @@ public class FIVRTransactionManager {
 						
 						if(!FIVRPacketManager.isPacketCorrupt(packet))
 						{
-							if(packet.payload != null && packet.payload.length != 0 && packet.header.seqNum > openPacketSeqNum)//received valid datapacket
+							if(packet.payload != null && packet.payload.length != 0 && packet.header.seqNum > prev_seq_num)//received valid datapacket
 							{
 								sendAckForSet = false;
 							}
@@ -131,6 +132,7 @@ public class FIVRTransactionManager {
 						timeout_attempts++;
 						
 					}
+					antiEmulatorPummel++;
 				}
 				
 				if(packets_to_go == 0)
@@ -180,7 +182,7 @@ public class FIVRTransactionManager {
 			int window_size = 5;
 			int segment_size = 512;
 			int threshold = 25;
-			int rtt_timeout = 200;
+			//int rtt_timeout = 200;
 			
 			// Send Session Initialization
 			ArrayList<FIVRPacket> toSend = null;
@@ -261,7 +263,7 @@ public class FIVRTransactionManager {
 				
 				try {
 					// check for response
-					socket.setSoTimeout(rtt_timeout);
+					socket.setSoTimeout(Client.RTT_TIMEOUT);
 					datagram = new DatagramPacket(new byte[segment_size],segment_size,sendToHost,sendToPort);
 					socket.receive(datagram);
 					packet = FIVRPacketManager.depacketize(datagram);

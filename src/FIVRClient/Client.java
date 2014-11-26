@@ -24,7 +24,7 @@ public class Client {
 	public static int WINDOW_SIZE = 5; // 5 packets per window
 	public static int PACKET_SIZE = 512; // 512 bytes
 	public static int BUFFER_SIZE = 1000; // 1000 bytes
-	public static int RTT_TIMEOUT = 1200; // 2 sec.
+	public static int RTT_TIMEOUT = 600; // 2 sec.
 	public static int CONNECTION_TIMEOUT = 30000; // 30 sec.
 	public static int PACKET_SEQUENCE_NUM = 0;
 
