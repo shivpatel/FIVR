@@ -1,0 +1,9 @@
+FIVR FTA Demo Instructions
+
+1. Move ClientDemo and ServerDemo folder to seperate desired locations.
+2. Open 2 terminal windows and change directories into each Demo folder.
+3. For Client run the following command: java FIVRClient/Client
+4. For Server run the following command: java FIVRServer/Server
+5. Follow on-screen instructions.
+
+NOTE: When using the "post [filename]" or "get [filename]" command in the Client window, remember that all file paths are relative to the ClientDemo folder. For example, running "post cat.jpg" would attempt to upload a file called cat.jpg found in the root level of the ClientDemo folder.
