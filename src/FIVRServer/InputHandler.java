@@ -4,6 +4,8 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.*;
 
+import FIVRModules.FIVRTransactionManager;
+
 public class InputHandler implements Runnable {
 
 	String name;
@@ -51,6 +53,7 @@ public class InputHandler implements Runnable {
 			if (args[0].equalsIgnoreCase("window") && args.length >= 2) {
 				try {
 					Server.windowSize = Integer.parseInt(args[1]);
+					FIVRTransactionManager.window_size_main = Server.windowSize;
 					Server.log("Window size changed to: " + Server.windowSize,true);
 				} catch (NumberFormatException e) {
 					System.out.println("Invalid arguments");
