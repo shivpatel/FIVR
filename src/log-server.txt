@@ -64,3 +64,8 @@ Client from /127.0.0.1:8000 connected!
 Download file packet request arrived.
 Request to download ServerFiles/Lenna.png
 File sent to client!
+Server is ready...
+Connection request packet arrived.
+Processing incoming connection request.
+Client from /127.0.0.1:8000 connected!
+Upload file packet request arrived.
