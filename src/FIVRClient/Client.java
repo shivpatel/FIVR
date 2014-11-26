@@ -237,6 +237,7 @@ public class Client {
 					}
 					if(fPacket.header.ack == -404 && fPacket.header.seqNum == -404) {
 						System.out.println("File not found. The server could not find that file.");
+						socket.send(datagram);
 						return false;
 					}
 				}
