@@ -15,6 +15,7 @@ public class FIVRTransactionManager {
 	private static String last_received_filename = "";
 	public static int max_tries = 2000;
 	public static int rttTime = 200;
+	public static int window_size_main = 5;
 	
 	/**
 	 * Returns last filename detected from receiveAllPackets function. Erases values after being called.
@@ -87,7 +88,7 @@ public class FIVRTransactionManager {
 					
 					try {
 						
-						if(sendAckForSet && antiEmulatorPummel % 5 == 0)//keep sending ack for the set
+						if(sendAckForSet && antiEmulatorPummel % window_size_main == 0)//keep sending ack for the set
 						{
 							sendAckNackResponse(socket, sendToHost, sendToPort, -1, prev_seq_num+1, false);
 						}
@@ -179,7 +180,7 @@ public class FIVRTransactionManager {
 		try {
 			
 			// FIVR Rules Initialization
-			int window_size = 5;
+			int window_size = window_size_main;
 			int segment_size = 512;
 			int threshold = 25;
 			//int rtt_timeout = 200;

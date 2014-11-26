@@ -158,6 +158,7 @@ public class Client {
 
 	public static void changeWindow(String size) {
 		WINDOW_SIZE = Integer.parseInt(size);
+		FIVRTransactionManager.window_size_main = WINDOW_SIZE;
 		System.out.println("Window size changed to: " + WINDOW_SIZE);
 	}
 
