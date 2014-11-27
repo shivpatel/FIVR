@@ -94,9 +94,9 @@ public class Client {
 			port = Integer.parseInt(prt);
 			// port = Integer.parseInt(clntPrt) + 1; // comment out if using emulator
 			clientPort = Integer.parseInt(clntPrt);
-			System.out.println("Settings add. Type connect to establish a connection.");
+			log("Settings add. Type connect to establish a connection.",true);
 		} catch (Exception e) {
-			System.out.println("Error connecting: " + e);
+			log("Error connecting: " + e,true);
 		}
 	}
 
@@ -123,7 +123,7 @@ public class Client {
 			while (!gotResponse) {
 				try {
 					if (tries > FIVRTransactionManager.max_tries) {
-						System.out.println("Tried to connect to server, but no luck.");
+						log("Tried to connect to server, but no luck.",true);
 						return;
 					}
 					socket.setSoTimeout(RTT_TIMEOUT);
@@ -147,11 +147,11 @@ public class Client {
 			}
 			
 			connected = true;
-			System.out.println("Connected to server!");
+			log("Connected to server!",true);
 			return;
 
 		} catch (Exception e) {
-			System.out.println("Could not connect to server. Error: " + e.getMessage());
+			log("Could not connect to server. Error: " + e.getMessage(),true);
 			return;
 		}
 	}
@@ -159,7 +159,7 @@ public class Client {
 	public static void changeWindow(String size) {
 		WINDOW_SIZE = Integer.parseInt(size);
 		FIVRTransactionManager.window_size_main = WINDOW_SIZE;
-		System.out.println("Window size changed to: " + WINDOW_SIZE);
+		log("Window size changed to: " + WINDOW_SIZE,true);
 	}
 
 	/**
@@ -167,12 +167,12 @@ public class Client {
 	 */
 	public static void disconnect() {
 		if (!connected) {  
-			System.out.println("Needs to be connected before disconnecting.");
+			log("Needs to be connected before disconnecting.",true);
 			return;
 		}
 		connected = false;
 		socket.close();
-		System.out.println("Connection closed.");
+		log("Connection closed.",true);
 	}
 
 	/**
@@ -207,7 +207,7 @@ public class Client {
 					host, port);
 			
 		} catch (Exception e) {
-			System.out.println("Could not get that file. Error: " + e);
+			log("Could not get that file. Error: " + e,true);
 			return false;
 		}
 		
@@ -217,7 +217,7 @@ public class Client {
 		while (!gotOpenBracketPacket) {
 			try {
 				if (too_many_tries > FIVRTransactionManager.max_tries) {
-					System.out.println("Could not get that file. Error: Request response never received.");
+					log("Could not get that file. Error: Request response never received.",true);
 					return false;
 				}
 				
@@ -236,7 +236,7 @@ public class Client {
 						RTT_TIMEOUT -= 50;
 					}
 					if(fPacket.header.ack == -404 && fPacket.header.seqNum == -404) {
-						System.out.println("File not found. The server could not find that file.");
+						log("File not found. The server could not find that file.",true);
 						socket.send(datagram);
 						return false;
 					}
@@ -249,7 +249,7 @@ public class Client {
 		
 		ArrayList<FIVRPacket> data = FIVRTransactionManager.receiveAllPackets(socket, fPacket, host, port);
 		if (data == null) {
-			System.out.println("Did not receive file");
+			log("Did not receive file",true);
 			return false;
 		}
 		
@@ -269,15 +269,15 @@ public class Client {
 		
 		try {
 			String name = "ClientFiles/" + FIVRTransactionManager.getLastReceivedFilename().trim();
-			System.out.println("The file will be stored as " + name);
+			log("The file will be stored as " + name,true);
 			Files.write(Paths.get(name), fileData);
 		} catch (Exception e) {
-			System.out.println("Could not save file locally on client; local error.");
+			log("Could not save file locally on client; local error.",true);
 			return false;
 		}
 		
-		System.out.println("Download duration: " + ((System.currentTimeMillis()/1000) - startTime) + " seconds");
-		System.out.println("Download speed average: " + (FIVRTransactionManager.last_file_size/((System.currentTimeMillis()/1000) - startTime)) + " kbps");
+		log("Download duration: " + ((System.currentTimeMillis()/1000) - startTime) + " seconds",true);
+		log("Download speed average: " + (FIVRTransactionManager.last_file_size/((System.currentTimeMillis()/1000) - startTime)) + " kbps",true);
 		
 		return true;
 	}
@@ -297,15 +297,33 @@ public class Client {
 		}
 		int result = FIVRTransactionManager.sendAllPackets(filename, socket, host, port, PACKET_SEQUENCE_NUM);
 		if (result == -1) {
-			System.out.println("Failed to send file.");
+			log("Failed to send file.",true);
 			return false;
 		} else {
-			System.out.println("File successfully uploaded!");
+			log("File successfully uploaded!",true);
 			PACKET_SEQUENCE_NUM = result;
-			System.out.println("Upload duration: " + ((System.currentTimeMillis()/1000) - startTime) + " seconds");
-			System.out.println("Upload speed average: " + (FIVRTransactionManager.last_file_size/((System.currentTimeMillis()/1000) - startTime)) + " kbps");
+			log("Upload duration: " + ((System.currentTimeMillis()/1000) - startTime) + " seconds",true);
+			log("Upload speed average: " + (FIVRTransactionManager.last_file_size/((System.currentTimeMillis()/1000) - startTime)) + " kbps",true);
 			return true;
 		}
+	}
+	
+	public static boolean log(String message) {
+		try {
+			File outFile = new File("log-client.txt");
+			FileWriter fWriter = new FileWriter(outFile, true);
+			PrintWriter pWriter = new PrintWriter(fWriter);
+			pWriter.println(message);
+			pWriter.close();
+			return true;
+		} catch (Exception e) {
+			return false;
+		}
+	}
+	
+	public static boolean log(String message, boolean printInConsole) {
+		if (printInConsole) System.out.println(message);
+		return log(message);
 	}
 
 }

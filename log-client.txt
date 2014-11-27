@@ -1,0 +1,11 @@
+Settings add. Type connect to establish a connection.
+Connected to server!
+File not found. The server could not find that file.
+File not found. The server could not find that file.
+File not found. The server could not find that file.
+File not found. The server could not find that file.
+File not found. The server could not find that file.
+File not found. The server could not find that file.
+File not found. The server could not find that file.
+File not found. The server could not find that file.
+File not found. The server could not find that file.
