@@ -310,7 +310,7 @@ public class Client {
 	
 	public static boolean log(String message) {
 		try {
-			File outFile = new File("log-client.txt");
+			File outFile = new File("output-client.txt");
 			FileWriter fWriter = new FileWriter(outFile, true);
 			PrintWriter pWriter = new PrintWriter(fWriter);
 			pWriter.println(message);

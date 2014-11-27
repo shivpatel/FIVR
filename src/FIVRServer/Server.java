@@ -40,7 +40,7 @@ public class Server {
 	public static boolean log(String message) {
 		if (!enableLog) return false;
 		try {
-			File outFile = new File("log-server.txt");
+			File outFile = new File("output-server.txt");
 			FileWriter fWriter = new FileWriter(outFile, true);
 			PrintWriter pWriter = new PrintWriter(fWriter);
 			pWriter.println(message);
